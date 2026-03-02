@@ -1,4 +1,4 @@
-# Smart Meal Planning Application
+# Recipe Platform (Meal Planner Project)
 
 ## 1. Introduction
 
@@ -6,7 +6,8 @@ Daily meal selection is a repetitive and cognitively demanding task. Many people
 
 Additionally, the overwhelming volume of content on social media makes it difficult for users to track previously saved recipes. This information overload increases decision fatigue and reduces the likelihood of experimenting with new dishes.
 
-This project proposes a structured, searchable, and nutrition-aware platform designed to streamline recipe organization and meal planning.
+This project builds a **reels-first recipe platform** where creators upload short recipe videos inside the app, and users can save them into **structured, reusable recipe cards**. The saved library then powers **calendar meal planning** and an **aggregated grocery list**.
+
 
 ---
 
@@ -26,7 +27,7 @@ Existing applications typically focus on isolated functions such as recipe brows
 
 ## 3. Proposed Solution
 
-The Smart Meal Planner integrates recipe management, nutrition calculation, and weekly planning into a unified platform.
+The Reels-first Recipe Platform integrates recipe management, nutrition calculation, and weekly planning into a unified platform. Core workflow: **Discover → Save → Reuse → Plan → Shop**
 
 The application will:
 
@@ -45,28 +46,31 @@ The goal is to reduce decision fatigue, improve organization, and enhance nutrit
 
 ## 4. Target Users
 
-The system primarily targets:
+Primary:
+- Students and busy individuals who consume short-form food content and want to **save + reuse recipes**
+- Creators who want an easy way to publish recipe videos that remain usable for cooking
 
-- Students seeking budget-aware meal planning  
-- Busy individuals who require efficient decision-making  
-- Health-conscious users monitoring calorie or macronutrient intake  
-- Individuals who cook regularly and seek better organization  
+Secondary (roadmap):
+- Health-focused users (nutrition goals/analytics)
+- Budget-focused users (cost estimation / store comparisons when feasible)
 
-These users value time efficiency, structured organization, and greater control over nutrition.
 
 ## 5. Minimum Viable Product (MVP)
 
 The initial version of the system will include:
 
-- User authentication  
-- Manual recipe creation, editing, and storage  
-- Integration with a nutritional data source for ingredient values  
-- Automatic calorie and macronutrient calculation  
-- Filtering by calories and included or excluded ingredients  
-- Basic weekly meal planner  
-- Automatic shopping list generation based on planned meals  
+- Authentication  
+- Creator upload: short video + guided recipe fields (ingredients with quantities, steps, time/servings)  
+- Reels-style feed with basic discovery (categories + search)  
+- Save → structured recipe card  
+- Saved library with collections/tags + search  
+- Basic calendar meal planning  
+- Grocery list generation aggregated from planned meals  
 
-Recipe import from external platforms will initially support manual text input. Automated extraction (scraping or AI-based parsing) is considered a post-MVP enhancement.
+### Out of Scope (Roadmap)
+- Automated import/extraction from external platforms  
+- Advanced nutrition analytics  
+- Store-level budget comparison (depends on pricing data availability)  
 
 ---
 
@@ -79,6 +83,7 @@ Recipe import from external platforms will initially support manual text input. 
 - Users are frustrated by losing or forgetting saved recipes.
 
 ### Risks
+- Creators may dislike filling structured fields → mitigate with templates/autocomplete + minimal required fields  
 - Users may not want to manually input ingredient data.
 - The market for recipe and meal planning apps is competitive.
 - Automatic nutrition calculation depends on external API reliability.
@@ -116,4 +121,4 @@ The system follows a layered architecture separating presentation, application l
 
 ## 9. Conclusion
 
-Smart Meal Planner aims to reduce decision fatigue, prevent information overload, and simplify home cooking by combining structured recipe storage, nutrition awareness, filtering, and meal planning into one unified platform.
+This Recipe Platform aims to reduce decision fatigue, prevent information overload, and simplify home cooking by combining structured recipe storage, nutrition awareness, filtering, and meal planning into one unified platform.
