@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  posts     Post[]
+  saves     Save[]
+  planItems MealPlanItem[]
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  videoUrl  String
+  creatorId String
+  createdAt DateTime @default(now())
+
+  creator   User   @relation(fields: [creatorId], references: [id])
+  recipe    Recipe?
+  saves     Save[]
+
+  @@index([creatorId])
+}
+
+model Recipe {
+  id          String  @id @default(cuid())
+  postId      String  @unique
+  servings    Int?
+  timeMinutes Int?
+
+  post        Post   @relation(fields: [postId], references: [id])
+  ingredients Ingredient[]
+  steps       Step[]
+  planItems   MealPlanItem[]
+}
+
+model Ingredient {
+  id       String  @id @default(cuid())
+  recipeId String
+  name     String
+  quantity Float?
+  unit     String?
+
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@index([recipeId])
+}
+
+model Step {
+  id       String @id @default(cuid())
+  recipeId String
+  order    Int
+  text     String
+
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@index([recipeId])
+}
+
+model Save {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+  post      Post @relation(fields: [postId], references: [id])
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model MealPlanItem {
+  id       String   @id @default(cuid())
+  userId   String
+  recipeId String
+  date     DateTime
+
+  user     User   @relation(fields: [userId], references: [id])
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@index([userId, date])
+  @@index([recipeId])
+}
