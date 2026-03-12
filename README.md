@@ -217,3 +217,38 @@ Adjust commands according to your project scripts.
 ## License
 
 To be defined.
+
+## Running the project locally
+
+### 1. Clone the repository
+
+git clone https://github.com/Sasha-newf/meal-planner-project-se.git
+cd meal-planner-project-se
+
+### 2. Create env file
+
+Copy .env.example to .env
+
+cp .env.example .env
+
+### 3. Start database
+
+docker compose up -d
+
+### 4. Install server dependencies
+
+cd server
+npm install
+
+### 5. Run server
+
+npm run dev
+
+### 6. Install client dependencies
+
+cd ../client
+npm install
+
+### 7. Run client
+
+npm run dev
