@@ -5,6 +5,8 @@ const { getUserIdOrFallback } = require("../services/userService");
 
 exports.getFeed = async (req, res) => {
   try {
+    const userId = await getUserIdOrFallback(req);
+
     const posts = await prisma.post.findMany({
       include: {
         recipe: {
@@ -16,6 +18,9 @@ exports.getFeed = async (req, res) => {
           },
         },
         creator: true,
+        saves: {
+          where: { userId },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -31,6 +36,8 @@ exports.getFeed = async (req, res) => {
 
 exports.getPostById = async (req, res) => {
   try {
+    const userId = await getUserIdOrFallback(req);
+
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
       include: {
@@ -43,6 +50,9 @@ exports.getPostById = async (req, res) => {
           },
         },
         creator: true,
+        saves: {
+          where: { userId },
+        },
       },
     });
 

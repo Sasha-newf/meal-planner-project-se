@@ -4,6 +4,7 @@ function toPostDto(post) {
     title: post.title,
     videoUrl: post.videoUrl,
     tags: post.tags ?? [],
+    isSaved: post.saves ? post.saves.length > 0 : false,
 
     recipe: post.recipe
       ? {

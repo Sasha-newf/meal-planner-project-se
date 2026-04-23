@@ -94,6 +94,12 @@ export default function Saved() {
       );
     }
 
+    if (filters.difficulty) {
+      result = result.filter((post) =>
+        post.tags?.some((tag) => tag.toLowerCase() === filters.difficulty.toLowerCase())
+      );
+    }
+
     if (filters.cookTime) {
       const limit = Number(filters.cookTime);
 
@@ -101,7 +107,7 @@ export default function Saved() {
         const time = post.recipe?.timeMinutes;
         if (!time) return false;
 
-        if (limit === 15) return time < 15;
+        if (limit === 15) return time <= 15;
         if (limit === 30) return time >= 15 && time <= 30;
         if (limit === 60) return time > 30 && time <= 60;
         if (limit === 120) return time > 60;

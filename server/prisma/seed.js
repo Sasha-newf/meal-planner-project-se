@@ -34,12 +34,13 @@ async function main() {
     data: { id: "demo-user", email: "demo@example.com", password: passwordHash },
   });
 
-  async function createPostWithRecipe(creatorId, title, videoUrl, servings, timeMinutes, ingredients, steps) {
+  async function createPostWithRecipe(creatorId, title, videoUrl, servings, timeMinutes, ingredients, steps, tags = []) {
     return prisma.post.create({
       data: {
         title,
         videoUrl,
         creatorId,
+        tags,
         recipe: {
           create: {
             servings,
@@ -63,7 +64,8 @@ async function main() {
       { name: "chili oil", quantity: 1, unit: "tbsp" },
       { name: "eggs", quantity: 2, unit: "pcs" },
     ],
-    ["Boil noodles", "Mix sauce", "Combine and serve"]
+    ["Boil noodles", "Mix sauce", "Combine and serve"],
+    ["Easy", "Lunch", "Spicy"]
   );
 
   await createPostWithRecipe(
@@ -77,7 +79,8 @@ async function main() {
       { name: "tomato", quantity: 2, unit: "pcs" },
       { name: "olive oil", quantity: 1, unit: "tbsp" },
     ],
-    ["Chop vegetables", "Add dressing", "Mix"]
+    ["Chop vegetables", "Add dressing", "Mix"],
+    ["Easy", "Vegan", "Gluten-Free", "Salad"]
   );
 
   await createPostWithRecipe(
@@ -91,7 +94,8 @@ async function main() {
       { name: "milk", quantity: 250, unit: "ml" },
       { name: "eggs", quantity: 2, unit: "pcs" },
     ],
-    ["Mix ingredients", "Cook on pan", "Serve"]
+    ["Mix ingredients", "Cook on pan", "Serve"],
+    ["Medium", "Breakfast"]
   );
 
   console.log("Seed completed: 2 users, 3 posts with recipes.");
