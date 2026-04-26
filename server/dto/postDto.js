@@ -3,6 +3,8 @@ function toPostDto(post) {
     id: post.id,
     title: post.title,
     videoUrl: post.videoUrl,
+    imageUrl: post.imageUrl,
+    image: post.imageUrl,
     tags: post.tags ?? [],
     isSaved: post.saves ? post.saves.length > 0 : false,
 

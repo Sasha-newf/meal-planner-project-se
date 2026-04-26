@@ -82,6 +82,7 @@ exports.createPost = async (req, res) => {
     const {
       title,
       videoUrl,
+      imageUrl,
       servings,
       timeMinutes,
       ingredients,
@@ -95,6 +96,7 @@ exports.createPost = async (req, res) => {
       data: {
         title,
         videoUrl,
+        imageUrl: imageUrl || null,
         creatorId,
         tags: tags || [],
         recipe: {

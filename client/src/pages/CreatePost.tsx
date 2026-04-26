@@ -12,11 +12,45 @@ type Ingredient = {
 
 const AVAILABLE_TAGS = [...mealTypes, ...dietaryOptions];
 
+function getYouTubeThumbnail(url: string) {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+    let videoId = "";
+
+    if (parsed.hostname.includes("youtu.be")) {
+      videoId = parsed.pathname.slice(1).split("?")[0];
+    }
+
+    if (parsed.hostname.includes("youtube.com")) {
+      videoId = parsed.searchParams.get("v") || "";
+
+      if (!videoId && parsed.pathname.includes("/shorts/")) {
+        videoId =
+          parsed.pathname.split("/shorts/")[1]?.split("/")[0] || "";
+      }
+
+      if (!videoId && parsed.pathname.includes("/embed/")) {
+        videoId =
+          parsed.pathname.split("/embed/")[1]?.split("/")[0] || "";
+      }
+    }
+
+    return videoId
+      ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function CreatePost() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [servings, setServings] = useState(1);
   const [timeMinutes, setTimeMinutes] = useState(10);
   const [ingredients, setIngredients] = useState<Ingredient[]>([
@@ -38,9 +72,13 @@ export default function CreatePost() {
     try {
       setSubmitting(true);
 
+      const finalImageUrl =
+        imageUrl.trim() || getYouTubeThumbnail(videoUrl);
+
       await api.post("/posts", {
         title,
         videoUrl,
+        imageUrl: finalImageUrl,
         servings,
         timeMinutes,
         ingredients,
@@ -50,6 +88,7 @@ export default function CreatePost() {
 
       setTitle("");
       setVideoUrl("");
+      setImageUrl("");
       setServings(1);
       setTimeMinutes(10);
       setIngredients([{ name: "", quantity: 0, unit: "" }]);
@@ -77,7 +116,9 @@ export default function CreatePost() {
     <div className="max-w-5xl mx-auto">
       <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Create Post</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Create Post
+          </h1>
           <p className="text-sm text-gray-400 mt-1">
             Add a new recipe and organize it with tags
           </p>
@@ -104,6 +145,13 @@ export default function CreatePost() {
                   onChange={(e) => setVideoUrl(e.target.value)}
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
                 />
+
+                <input
+                  placeholder="Image URL (optional)"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
+                />
               </div>
             </section>
 
@@ -120,7 +168,9 @@ export default function CreatePost() {
                   <input
                     type="number"
                     value={servings}
-                    onChange={(e) => setServings(Number(e.target.value))}
+                    onChange={(e) =>
+                      setServings(Number(e.target.value))
+                    }
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
                   />
                 </div>
@@ -132,7 +182,9 @@ export default function CreatePost() {
                   <input
                     type="number"
                     value={timeMinutes}
-                    onChange={(e) => setTimeMinutes(Number(e.target.value))}
+                    onChange={(e) =>
+                      setTimeMinutes(Number(e.target.value))
+                    }
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
                   />
                 </div>
@@ -144,6 +196,7 @@ export default function CreatePost() {
                 <h2 className="text-sm font-semibold text-gray-900">
                   Ingredients
                 </h2>
+
                 <button
                   type="button"
                   onClick={() =>
@@ -173,7 +226,7 @@ export default function CreatePost() {
                         next[index].name = e.target.value;
                         setIngredients(next);
                       }}
-                      className="col-span-5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
+                      className="col-span-5 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
                     />
 
                     <input
@@ -182,10 +235,12 @@ export default function CreatePost() {
                       value={ing.quantity}
                       onChange={(e) => {
                         const next = [...ingredients];
-                        next[index].quantity = Number(e.target.value);
+                        next[index].quantity = Number(
+                          e.target.value
+                        );
                         setIngredients(next);
                       }}
-                      className="col-span-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
+                      className="col-span-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
                     />
 
                     <input
@@ -196,20 +251,29 @@ export default function CreatePost() {
                         next[index].unit = e.target.value;
                         setIngredients(next);
                       }}
-                      className="col-span-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
+                      className="col-span-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
                     />
 
                     <button
                       type="button"
                       onClick={() => {
-                        const next = ingredients.filter((_, i) => i !== index);
+                        const next = ingredients.filter(
+                          (_, i) => i !== index
+                        );
+
                         setIngredients(
                           next.length > 0
                             ? next
-                            : [{ name: "", quantity: 0, unit: "" }]
+                            : [
+                                {
+                                  name: "",
+                                  quantity: 0,
+                                  unit: "",
+                                },
+                              ]
                         );
                       }}
-                      className="col-span-1 h-11 w-11 rounded-2xl border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center"
+                      className="col-span-1 h-11 w-11 rounded-2xl border border-gray-200 flex items-center justify-center"
                     >
                       <X size={16} />
                     </button>
@@ -222,7 +286,10 @@ export default function CreatePost() {
           <div className="space-y-6">
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">Steps</h2>
+                <h2 className="text-sm font-semibold text-gray-900">
+                  Steps
+                </h2>
+
                 <button
                   type="button"
                   onClick={() => setSteps([...steps, ""])}
@@ -235,7 +302,10 @@ export default function CreatePost() {
 
               <div className="space-y-3">
                 {steps.map((step, index) => (
-                  <div key={index} className="flex items-start gap-3">
+                  <div
+                    key={index}
+                    className="flex items-start gap-3"
+                  >
                     <div className="mt-3 h-7 w-7 shrink-0 rounded-full bg-green-50 text-green-700 text-xs font-semibold flex items-center justify-center">
                       {index + 1}
                     </div>
@@ -248,16 +318,20 @@ export default function CreatePost() {
                         next[index] = e.target.value;
                         setSteps(next);
                       }}
-                      className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300"
+                      className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
                     />
 
                     <button
                       type="button"
                       onClick={() => {
-                        const next = steps.filter((_, i) => i !== index);
-                        setSteps(next.length > 0 ? next : [""]);
+                        const next = steps.filter(
+                          (_, i) => i !== index
+                        );
+                        setSteps(
+                          next.length > 0 ? next : [""]
+                        );
                       }}
-                      className="h-11 w-11 rounded-2xl border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center"
+                      className="h-11 w-11 rounded-2xl border border-gray-200 flex items-center justify-center"
                     >
                       <X size={16} />
                     </button>
@@ -267,21 +341,24 @@ export default function CreatePost() {
             </section>
 
             <section>
-              <h2 className="text-sm font-semibold text-gray-900 mb-3">Tags</h2>
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Tags
+              </h2>
 
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_TAGS.map((tag) => {
-                  const isSelected = selectedTags.includes(tag);
+                  const isSelected =
+                    selectedTags.includes(tag);
 
                   return (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium border ${
                         isSelected
                           ? "bg-green-50 border-green-300 text-green-700"
-                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                          : "bg-white border-gray-200 text-gray-600"
                       }`}
                     >
                       {tag}
@@ -295,22 +372,36 @@ export default function CreatePost() {
               <h2 className="text-sm font-semibold text-gray-900 mb-2">
                 Summary
               </h2>
+
               <div className="space-y-2 text-sm text-gray-600">
                 <p>
-                  <span className="font-medium text-gray-800">Title:</span>{" "}
+                  <span className="font-medium text-gray-800">
+                    Title:
+                  </span>{" "}
                   {title || "—"}
                 </p>
+
                 <p>
-                  <span className="font-medium text-gray-800">Servings:</span>{" "}
+                  <span className="font-medium text-gray-800">
+                    Servings:
+                  </span>{" "}
                   {servings}
                 </p>
+
                 <p>
-                  <span className="font-medium text-gray-800">Cook time:</span>{" "}
+                  <span className="font-medium text-gray-800">
+                    Cook time:
+                  </span>{" "}
                   {timeMinutes} min
                 </p>
+
                 <p>
-                  <span className="font-medium text-gray-800">Tags:</span>{" "}
-                  {selectedTags.length > 0 ? selectedTags.join(", ") : "—"}
+                  <span className="font-medium text-gray-800">
+                    Tags:
+                  </span>{" "}
+                  {selectedTags.length > 0
+                    ? selectedTags.join(", ")
+                    : "—"}
                 </p>
               </div>
             </section>
@@ -322,7 +413,7 @@ export default function CreatePost() {
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="inline-flex items-center justify-center rounded-2xl bg-green-500 px-6 py-3 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center rounded-2xl bg-green-500 px-6 py-3 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-60"
           >
             {submitting ? "Creating..." : "Create Recipe"}
           </button>

@@ -20,6 +20,7 @@ model Post {
   id        String   @id @default(cuid())
   title     String
   videoUrl  String
+  imageUrl  String?
   creatorId String
   tags      String[]
   createdAt DateTime @default(now())

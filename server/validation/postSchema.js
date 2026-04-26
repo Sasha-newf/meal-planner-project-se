@@ -9,6 +9,7 @@ const ingredientSchema = z.object({
 const postSchema = z.object({
   title: z.string(),
   videoUrl: z.string(),
+  imageUrl: z.string().optional(),
 
   servings: z.number(),
   timeMinutes: z.number(),
