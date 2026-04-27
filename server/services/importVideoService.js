@@ -138,12 +138,11 @@ Text:
 ${text}
   `.trim();
 
-  const response = await openai.responses.create({
-    model: "gpt-5.4-nano",
-    input: prompt,
-  });
-
-  return JSON.parse(response.output_text);
+  const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: prompt }],
+});
+return JSON.parse(response.choices[0].message.content);
 }
 
 module.exports = {
