@@ -17,7 +17,6 @@ const navItems = [
   { to: "/library", label: "Recipes", icon: BookOpen },
   { to: "/feed", label: "Discover", icon: UtensilsCrossed },
   { to: "/create", label: "Create Post", icon: SquarePen },
-  { to: "/saved", label: "Saved", icon: Heart },
   { to: "/grocery", label: "Grocery List", icon: ShoppingCart },
 ];
 
