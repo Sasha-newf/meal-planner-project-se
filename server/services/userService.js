@@ -1,13 +1,9 @@
 const prisma = require("../prismaClient");
 const bcrypt = require("bcrypt");
 
-/**
- * Gets the userId from req.userId, or falls back to the first user in the DB.
- * If no users exist, it creates a default test user.
- */
 async function getUserIdOrFallback(req) {
-  if (req && req.userId) {
-    return req.userId;
+  if (req && req.user && req.user.userId) {
+    return req.user.userId;
   }
 
   let firstUser = await prisma.user.findFirst();

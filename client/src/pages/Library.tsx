@@ -38,9 +38,22 @@ export default function Library() {
   useEffect(() => {
     async function loadRecipes() {
       try {
-        const res = await api.get("/posts/feed");
-        const recipePosts = res.data.filter((post: LibraryPost) => Boolean(post.recipe));
-        setPosts(recipePosts);
+        const [feedRes, savedRes] = await Promise.all([
+          api.get("/posts/mine"),
+          api.get("/saved"),
+        ]);
+
+        const myPosts = feedRes.data;
+        const savedPosts = savedRes.data.map((p: LibraryPost) => ({ ...p, isSaved: true }));
+
+        const combined = [
+          ...myPosts,
+          ...savedPosts.filter(
+            (s: LibraryPost) => !myPosts.some((p: LibraryPost) => p.id === s.id)
+          ),
+        ];
+
+setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
       } catch (err) {
         console.error("Failed to load recipes", err);
       } finally {

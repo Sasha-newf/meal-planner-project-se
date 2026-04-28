@@ -179,3 +179,28 @@ exports.createPost = async (req, res) => {
     res.status(500).json({ error: err.message || "Create post failed" });
   }
 };
+
+exports.getMyPosts = async (req, res) => {
+  try {
+    const userId = await getUserIdOrFallback(req);
+
+    const posts = await prisma.post.findMany({
+      where: { creatorId: userId },
+      include: {
+        recipe: {
+          include: {
+            ingredients: true,
+            steps: { orderBy: { order: "asc" } },
+          },
+        },
+        saves: { where: { userId } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(posts.map((post) => toPostDto(post)));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch your posts" });
+  }
+};
