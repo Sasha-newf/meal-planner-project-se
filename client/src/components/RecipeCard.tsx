@@ -1,59 +1,81 @@
+import { Clock, Users, Bookmark } from "lucide-react";
+
 export default function RecipeCard({ post, onOpen, onToggleSave }: any) {
   return (
-    <div 
+    <div
       onClick={onOpen}
-      onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.01)"}
-      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-      style={{
-        border: "1px solid #eee",
-        borderRadius: "12px",
-        padding: "16px",
-        background: "#fff",
-        transition: "transform 0.15s ease",
-        cursor: "pointer",
-      }}
+      className="bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden"
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <h3 style={{ margin: 0 }}>{post.title}</h3>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSave(post.id);
-          }}
-          style={{
-            background: post.isSaved ? "#ccc" : "#4CAF50",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "20px",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "14px"
-          }}
-        >
-          {post.isSaved ? "Saved ✓" : "Save"}
-        </button>
-      </div>
+      {post.imageUrl && (
+        <div className="h-48 overflow-hidden">
+          <img
+            src={post.imageUrl}
+            alt={post.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      )}
 
-      <p style={{ margin: "8px 0" }}>{post.recipe?.timeMinutes} min • {post.recipe?.servings} servings</p>
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h3 className="text-base font-semibold text-gray-900 leading-snug">
+            {post.title}
+          </h3>
 
-      <ul style={{ margin: "8px 0", paddingLeft: "20px" }}>
-        {post.recipe?.ingredients.slice(0, 3).map((i: any) => (
-          <li key={i.name}>{i.name}</li>
-        ))}
-      </ul>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSave(post.id);
+            }}
+            className={`shrink-0 p-2 rounded-xl border transition-all ${
+              post.isSaved
+                ? "bg-green-50 border-green-200 text-green-600"
+                : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
+            }`}
+          >
+            <Bookmark
+              size={15}
+              fill={post.isSaved ? "currentColor" : "none"}
+            />
+          </button>
+        </div>
 
-      <div style={{ marginTop: "8px" }}>
-        {post.tags?.map((tag: string) => (
-          <span key={tag} style={{
-            background: "#eee",
-            padding: "4px 8px",
-            borderRadius: "6px",
-            marginRight: "6px",
-            fontSize: "12px"
-          }}>
-            #{tag}
-          </span>
-        ))}
+        <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+          {post.recipe?.timeMinutes && (
+            <span className="flex items-center gap-1">
+              <Clock size={12} />
+              {post.recipe.timeMinutes} min
+            </span>
+          )}
+          {post.recipe?.servings && (
+            <span className="flex items-center gap-1">
+              <Users size={12} />
+              {post.recipe.servings} servings
+            </span>
+          )}
+        </div>
+
+        {post.recipe?.ingredients?.length > 0 && (
+          <p className="text-xs text-gray-400 mb-3 line-clamp-1">
+            {post.recipe.ingredients
+              .slice(0, 4)
+              .map((i: any) => i.name)
+              .join(", ")}
+          </p>
+        )}
+
+        {post.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {post.tags.slice(0, 4).map((tag: string) => (
+              <span
+                key={tag}
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

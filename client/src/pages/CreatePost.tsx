@@ -68,49 +68,71 @@ export default function CreatePost() {
     );
   }
 
+  const [error, setError] = useState("");
   async function handleSubmit() {
-    try {
-      setSubmitting(true);
+  setError("");
 
-      const finalImageUrl =
-        imageUrl.trim() || getYouTubeThumbnail(videoUrl);
-
-      await api.post("/posts", {
-        title,
-        videoUrl,
-        imageUrl: finalImageUrl,
-        servings,
-        timeMinutes,
-        ingredients,
-        steps,
-        tags: selectedTags,
-      });
-
-      setTitle("");
-      setVideoUrl("");
-      setImageUrl("");
-      setServings(1);
-      setTimeMinutes(10);
-      setIngredients([{ name: "", quantity: 0, unit: "" }]);
-      setSteps([""]);
-      setSelectedTags([]);
-
-      navigate("/library");
-    } catch (err: any) {
-      console.error("Create post error:", err);
-      console.error("Server response:", err?.response?.data);
-
-      const errorMessage =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Error creating post";
-
-      alert(errorMessage);
-    } finally {
-      setSubmitting(false);
-    }
+  if (!title.trim()) {
+    setError("Please add a recipe title");
+    return;
   }
+
+  if (!videoUrl.trim()) {
+    setError("Please add a video URL");
+    return;
+  }
+
+  const validIngredients = ingredients.filter(i => i.name.trim());
+  if (validIngredients.length === 0) {
+    setError("Please add at least one ingredient");
+    return;
+  }
+
+  const validSteps = steps.filter(s => s.trim());
+  if (validSteps.length === 0) {
+    setError("Please add at least one step");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    const finalImageUrl = imageUrl.trim() || getYouTubeThumbnail(videoUrl);
+
+    await api.post("/posts", {
+      title: title.trim(),
+      videoUrl: videoUrl.trim(),
+      imageUrl: finalImageUrl,
+      servings,
+      timeMinutes,
+      ingredients: validIngredients,
+      steps: validSteps,
+      tags: selectedTags,
+    });
+
+    setTitle("");
+    setVideoUrl("");
+    setImageUrl("");
+    setServings(1);
+    setTimeMinutes(10);
+    setIngredients([{ name: "", quantity: 0, unit: "" }]);
+    setSteps([""]);
+    setSelectedTags([]);
+    setError("");
+
+    navigate("/library");
+  } catch (err: any) {
+    console.error("Create post error:", err);
+    setError(
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      err?.message ||
+      "Error creating post"
+    );
+  } finally {
+    setSubmitting(false);
+  }
+}
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -408,7 +430,12 @@ export default function CreatePost() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
+        <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-end gap-3">
+          {error && (
+            <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 w-full">
+              {error}
+            </p>
+          )}
           <button
             type="button"
             onClick={handleSubmit}
