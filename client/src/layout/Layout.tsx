@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   BookOpen,
@@ -8,7 +8,9 @@ import {
   Settings,
   Leaf,
   SquarePen,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { to: "/", label: "Meal Plan", icon: CalendarDays },
@@ -20,6 +22,14 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <aside className="w-72 shrink-0 bg-white border-r border-gray-100 min-h-screen">
@@ -35,7 +45,6 @@ export default function Layout() {
         <nav className="px-4 pt-4 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-
             return (
               <NavLink
                 key={item.label + item.to}
@@ -61,26 +70,13 @@ export default function Layout() {
             <span>Settings</span>
           </button>
 
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-2xl mt-2 transition-all ${
-                isActive
-                  ? "bg-green-50 text-green-700"
-                  : "hover:bg-gray-50 text-gray-800"
-              }`
-            }
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-all mt-1"
           >
-            <img
-              src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=60"
-              alt="avatar"
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-green-100"
-            />
-            <div className="min-w-0">
-              <p className="text-base font-medium truncate">Sarah Mitchell</p>
-              <p className="text-sm text-gray-400 truncate">sarah@email.com</p>
-            </div>
-          </NavLink>
+            <LogOut size={20} />
+            <span>Log out</span>
+          </button>
         </div>
       </aside>
 
