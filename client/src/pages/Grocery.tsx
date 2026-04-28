@@ -134,6 +134,29 @@ export default function Grocery() {
         >
           Clear all
         </button>
+        <button
+          onClick={() => {
+            const text = sortedCombinedIngredients
+              .map((item) => `${item.name} — ${item.quantity || "-"} ${item.unit || ""}`)
+              .join("\n");
+            navigator.clipboard.writeText(text);
+            alert("Copied to clipboard!");
+          }}
+          disabled={recipes.length === 0}
+          style={{
+            marginTop: "14px",
+            marginLeft: "10px",
+            border: "1px solid #bbf7d0",
+            background: recipes.length === 0 ? "#f8fafc" : "#f0fdf4",
+            color: recipes.length === 0 ? "#94a3b8" : "#16a34a",
+            borderRadius: "14px",
+            padding: "10px 16px",
+            cursor: recipes.length === 0 ? "not-allowed" : "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Copy to clipboard
+        </button>
       </div>
 
       <div
