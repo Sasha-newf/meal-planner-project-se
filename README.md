@@ -1,134 +1,46 @@
-# Smart Meal Planner
+# Plately — Smart Meal Planner
 
-Smart Meal Planner is a full‑stack web application that unifies recipe management, nutrition calculation, pantry‑aware recommendations, weekly meal planning, and automatic shopping list generation into a single streamlined workflow.
+Plately is a full-stack social recipe and meal planning web app. Users can discover community recipes, save favorites, create their own recipes, plan weekly meals on a calendar, and generate grocery lists automatically.
 
-The system aims to reduce decision fatigue, improve recipe organization, and provide clear nutrition insights for home cooks.
+The app also features AI-powered recipe extraction from YouTube videos using yt-dlp and GPT-4o-mini.
 
-> **Status:** In development (MVP complete, advanced features planned)
-
----
-
-## 📚 Table of Contents
-
-- [Core Features (MVP)](#-core-features-mvp)
-- [Planned Extensions](#-planned-extensions)
-- [System Architecture](#-system-architecture)
-- [Nutrition Engine](#-nutrition-engine)
-- [AI Recipe Extraction (Planned)](#-ai-recipe-extraction-planned)
-- [Pantry Mode (Planned)](#-pantry-mode-planned)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Local Development](#-local-development)
-- [Project Structure](#-project-structure)
-- [Data Sources](#-data-sources)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
+**Status:** MVP complete, Week 6 stabilization in progress
 
 ---
 
-## Core Features (MVP)
+## Core Features
 
-- Structured recipe creation, editing, and storage  
-- Automatic calorie and macronutrient calculation  
-- Ingredient‑based filtering (include / exclude)  
-- Weekly meal planner  
-- Consolidated shopping list generation  
-- User authentication  
+- User authentication (register, login, JWT-based protected routes)
+- Social recipe feed — browse, search, and filter community recipes
+- Create posts with ingredients, steps, tags, and video URL
+- Save recipes to personal library
+- Like recipes
+- Weekly meal calendar — add/remove recipes to specific days and meal types
+- Automatic grocery list generation from meal plan
+- AI recipe import from YouTube URLs
+- External recipe dataset import
 
----
+## Planned Features
 
-## Planned Extensions
-
-- AI‑based recipe extraction from external links  
-- Pantry‑based “cook with what you have” recommendations  
-- Enhanced tagging and organization  
-- Personalized meal recommendations  
-- Advanced nutrition analytics  
-- Cost estimation integration  
-- Barcode scanning (mobile)  
-- Collaborative meal planning  
-
----
-
-## System Architecture
-
-Frontend (React + TypeScript)  
-→ Backend API (Node.js + Express)  
-→ PostgreSQL (Data Storage)  
-→ AI Microservice (Python + LLM API)  
-→ USDA FoodData Central API  
-
-### Frontend
-- User interface and interaction  
-- Meal planning UI  
-- Filtering and search controls  
-- Data visualization  
-
-### Server
-- Authentication
-- Recipe CRUD operations
-- Nutrition orchestration
-- Business logic
-- Meal plan + shopping list aggregation
-
-### Database (PostgreSQL)
-Stores:
-- Users  
-- Recipes  
-- Ingredients  
-- Meal plans  
-- Shopping lists  
-
-### AI Microservice (Planned)
-- Webpage text extraction and cleaning  
-- LLM‑based structured recipe extraction  
-- JSON schema validation  
-- Ingredient normalization support  
+- Nutrition data (USDA FoodData Central integration)
+- Pantry mode — rank recipes by available ingredients
+- Recipe ratings
+- User profiles
+- Mobile layout
+- Password reset flow
 
 ---
 
-## Nutrition Engine
+## Tech Stack
 
-The nutrition engine performs:
-
-1. Ingredient normalization  
-2. Fuzzy matching against USDA FoodData Central  
-3. Unit conversion (e.g., cups → grams)  
-4. Macro aggregation per recipe and per serving  
-
-Nutrition data is sourced from the USDA FoodData Central API (public domain / CC0).
-
-> Note: Volume‑to‑weight conversions rely on ingredient‑specific assumptions. All nutrition values are estimations.
-
----
-
-## AI Recipe Extraction (Planned)
-
-Pipeline:
-
-1. Retrieve webpage HTML / metadata  
-2. Remove boilerplate (ads, navigation, timestamps, irrelevant blocks)  
-3. Send cleaned text to an LLM with a constrained output schema  
-4. Validate structured JSON output  
-5. Persist validated recipe data  
-
-Expected extracted fields:
-- Title  
-- Ingredients (quantity, unit, normalized name)  
-- Steps  
-- Servings  
-- Prep / cook time  
-
----
-
-## Pantry Mode (Planned)
-
-- Normalize user‑entered pantry ingredients  
-- Compare against recipe ingredient lists  
-- Compute match percentage  
-- Rank recipes by cookability  
-- Highlight missing essentials  
+| Layer | Technology |
+|---|---|
+| Frontend | React + TypeScript, Vite, Tailwind CSS, React Router |
+| Backend | Node.js + Express (CommonJS) |
+| Database | PostgreSQL via Docker, Prisma ORM |
+| Auth | JWT tokens, bcrypt |
+| AI | OpenAI GPT-4o-mini + yt-dlp |
+| Testing | Jest + Supertest |
 
 ---
 
@@ -136,86 +48,10 @@ Expected extracted fields:
 
 ### Prerequisites
 
-- Node.js 18+  
-- Python 3.10+ (for AI microservice)  
-- PostgreSQL  
-- API Keys:
-  - USDA FoodData Central  
-  - LLM provider (optional)
-
----
-
-## Environment Variables
-
-### Server
-- `DATABASE_URL`
-- `FDC_API_KEY`
-- `JWT_SECRET`
-- `AI_SERVICE_URL`
-
-### AI Microservice (Optional)
-- `LLM_API_KEY`  
-- `LLM_MODEL`  
-
----
-
-## Local Development
-
-1. Start PostgreSQL (locally or via Docker).  
-2. Install all dependencies:
-   - `npm install`
-   - `npm run install:all`
-3. Run both server and client:
-   - `npm run dev`
-4. Start AI Microservice (optional):
-   - `cd ai-service`
-   - `python -m venv .venv`
-   - activate environment
-   - `pip install -r requirements.txt`
-   - `python app.py`
-
-Adjust commands according to your project scripts.
-
----
-
-## Project Structure
-
-- `/client`
-- `/server`
-- `/ai-service`
-- `/docs`
-
----
-
-## Data Sources
-
-- USDA FoodData Central — Nutrition data (public domain / CC0)
-
----
-
-## Roadmap
-
-- Fully automated AI‑based recipe extraction  
-- Intelligent pantry‑based ranking  
-- Personalized recommendation engine  
-- Cost‑aware meal planning  
-- Mobile enhancements  
-
----
-
-## Contributing
-
-- Open issues for bugs or feature proposals  
-- Use feature branches  
-- Keep pull requests focused and scoped  
-
----
-
-## License
-
-To be defined.
-
-## Running the project locally
+- Node.js 18+
+- Docker Desktop (for local PostgreSQL)
+- Python 3.10+ and yt-dlp (for AI import feature)
+- OpenAI API key
 
 ### 1. Clone the repository
 
@@ -224,29 +60,163 @@ git clone https://github.com/Sasha-newf/meal-planner-project-se.git
 cd meal-planner-project-se
 ```
 
-### 2. Create env file
-
-Copy `.env.example` to `.env`
+### 2. Create environment files
 
 ```bash
+# Root .env
 cp .env.example .env
+
+# Server .env
+cp .env.example server/.env
 ```
 
-### 3. Start database
+Open `server/.env` and fill in the required values (see Environment Variables below).
+
+### 3. Install yt-dlp (required for AI import)
+
+```bash
+pip install yt-dlp
+```
+
+### 4. Start the database
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Install all dependencies
+### 5. Install all dependencies
 
 ```bash
 npm install
 npm run install:all
 ```
 
-### 5. Run the project (client and server)
+### 6. Run database migrations and seed data
+
+```bash
+cd server
+npx prisma migrate deploy
+npx prisma generate
+node prisma/seed.js
+node scripts/importDummyRecipes.js
+cd ..
+```
+
+### 7. Run the project
 
 ```bash
 npm run dev
 ```
+
+The app will be available at `http://localhost:5173`
+
+---
+
+## Environment Variables
+
+### Root `.env`
+
+```
+DATABASE_URL=your_postgresql_connection_string
+```
+
+### `server/.env`
+
+```
+PORT=5001
+CORS_ORIGIN=http://localhost:5173
+
+DATABASE_URL=your_postgresql_connection_string
+
+JWT_SECRET=any_random_secret_string
+
+OPENAI_API_KEY=your_openai_api_key
+```
+
+**Notes:**
+- `DATABASE_URL` — use `postgresql://postgres:postgres@localhost:5432/mealplanner` for local Docker, or a Neon/cloud URL for shared development
+- `OPENAI_API_KEY` — required for AI recipe import from YouTube. Get one at platform.openai.com
+- `JWT_SECRET` — can be any string, used to sign auth tokens
+
+---
+
+## Project Structure
+
+```
+meal-planner-project-se/
+├── client/          # React + TypeScript frontend
+│   └── src/
+│       ├── api/         # Axios client with JWT interceptor
+│       ├── context/     # AuthContext
+│       ├── layout/      # Sidebar navigation
+│       ├── components/  # RecipeCard, LibraryRecipeGrid, etc.
+│       └── pages/       # Dashboard, Feed, Library, CreatePost, etc.
+├── server/          # Node.js + Express backend
+│   ├── controllers/ # Route handlers
+│   ├── dto/         # Response shaping
+│   ├── middleware/  # requireAuth, optionalAuth
+│   ├── prisma/      # Schema, migrations, seed
+│   ├── routes/      # API routes
+│   ├── scripts/     # Data import scripts
+│   ├── services/    # Business logic, AI import
+│   ├── tests/       # Jest + Supertest tests
+│   └── validation/  # Zod schemas
+├── docs/            # Project documentation
+└── specs/           # Requirements and specifications
+```
+
+---
+
+## API Endpoints
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | /auth/register | — | Register new user |
+| POST | /auth/login | — | Login |
+| GET | /posts/feed | optional | All community recipes |
+| GET | /posts/mine | required | Your recipes |
+| GET | /posts/:id | optional | Single recipe |
+| POST | /posts | required | Create recipe post |
+| POST | /posts/:id/save | required | Save recipe |
+| DELETE | /posts/:id/save | required | Unsave recipe |
+| POST | /posts/:id/like | required | Like recipe |
+| DELETE | /posts/:id/like | required | Unlike recipe |
+| POST | /plan | required | Add recipe to meal plan |
+| GET | /plan | required | Get meal plan |
+| DELETE | /plan/:id | required | Remove from meal plan |
+| GET | /grocery | required | Get grocery list |
+| POST | /imports/video | — | Import recipe from YouTube |
+| GET | /health | — | Health check |
+
+---
+
+## Running Tests
+
+```bash
+cd server
+npm test
+```
+
+28 tests across 6 test suites covering: auth, imports, save flow, grocery aggregation, meal plan, and timezone handling.
+
+---
+
+## Data Sources
+
+- [DummyJSON Recipes API](https://dummyjson.com/recipes) — demo recipe data (free)
+- OpenAI GPT-4o-mini — AI recipe extraction
+- yt-dlp — YouTube transcript extraction
+
+---
+
+## Contributing
+
+- Open issues for bugs or feature proposals
+- Use feature branches
+- Keep pull requests focused and scoped
+
+---
+
+## License
+
+To be defined.
