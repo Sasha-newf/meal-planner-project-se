@@ -12,7 +12,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
 
   const availableTags = useMemo(() => {
-    const allTags = posts.flatMap((p) => p.tags || []);
+    const allTags = posts.flatMap((p) => p.tags ?? []);
     return [...new Set(allTags)].slice(0, 8);
   }, [posts]);
 
@@ -47,6 +47,25 @@ export default function Feed() {
     }
   }
 
+  async function onToggleLike(postId: string) {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    try {
+      if (post.isLiked) {
+        await api.delete(`/posts/${postId}/like`);
+      } else {
+        await api.post(`/posts/${postId}/like`);
+      }
+      setPosts(posts.map((p) =>
+        p.id === postId
+          ? { ...p, isLiked: !p.isLiked, likeCount: (p.likeCount ?? 0) + (p.isLiked ? -1 : 1) }
+          : p
+      ));
+    } catch (err) {
+      console.error("Error toggling like", err);
+    }
+  }
+
   const filteredPosts = useMemo(() => {
     let result = [...posts];
 
@@ -71,7 +90,6 @@ export default function Feed() {
 
   return (
     <div className="flex flex-col min-w-0">
-      {/* Page header */}
       <header className="bg-white border border-gray-100 rounded-3xl px-6 md:px-8 py-6 mb-6 shadow-sm">
         <div className="mb-5">
           <h1 className="text-2xl font-semibold text-gray-900">Discover</h1>
@@ -80,7 +98,6 @@ export default function Feed() {
           </p>
         </div>
 
-        {/* Search */}
         <div className="relative mb-4 max-w-md">
           <Search
             size={15}
@@ -95,7 +112,6 @@ export default function Feed() {
           />
         </div>
 
-        {/* Tag filters */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedTag(null)}
@@ -123,16 +139,13 @@ export default function Feed() {
         </div>
       </header>
 
-      {/* Content */}
       {loading ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-500 text-sm">
           Loading recipes...
         </div>
       ) : filteredPosts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-          <p className="text-base font-semibold text-gray-900">
-            No recipes found
-          </p>
+          <p className="text-base font-semibold text-gray-900">No recipes found</p>
           <p className="text-sm text-gray-400 mt-1">
             {selectedTag || searchQuery
               ? "Try a different search or filter"
@@ -151,6 +164,7 @@ export default function Feed() {
                 post={post}
                 onOpen={() => navigate(`/posts/${post.id}`)}
                 onToggleSave={onToggleSave}
+                onToggleLike={onToggleLike}
               />
             ))}
           </div>

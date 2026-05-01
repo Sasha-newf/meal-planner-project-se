@@ -24,14 +24,14 @@ export type LibraryPost = {
   videoUrl?: string;
   tags?: string[];
   isSaved?: boolean;
+  isLiked?: boolean;
+  likeCount?: number;
   liked?: boolean;
   image?: string;
   calories?: number;
   rating?: number;
   reviews?: number;
-
   recipe?: RecipeData;
-
   servings?: number;
   timeMinutes?: number;
   ingredients?: Ingredient[];
@@ -42,6 +42,7 @@ interface LibraryRecipeGridProps {
   posts: LibraryPost[];
   onOpen: (postId: string) => void;
   onToggleSave: (postId: string) => void;
+  onToggleLike: (postId: string) => void;
 }
 
 const tagColorMap: Record<string, string> = {
@@ -79,10 +80,12 @@ function RecipeCardItem({
   post,
   onOpen,
   onToggleSave,
+  onToggleLike,
 }: {
   post: LibraryPost;
   onOpen: (postId: string) => void;
   onToggleSave: (postId: string) => void;
+  onToggleLike: (postId: string) => void;
 }) {
   const timeMinutes = getTimeMinutes(post);
   const servings = getServings(post);
@@ -108,17 +111,20 @@ function RecipeCardItem({
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
+        {/* Like + Save in overlay */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              onToggleLike(post.id);
             }}
-            className={`p-1.5 rounded-full backdrop-blur-sm transition-all ${
-              post.liked ? "bg-red-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"
+            className={`flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm transition-all ${
+              post.isLiked ? "bg-red-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"
             }`}
           >
-            <Heart size={13} fill={post.liked ? "currentColor" : "none"} />
+            <Heart size={12} fill={post.isLiked ? "currentColor" : "none"} />
+            <span className="text-[11px] font-bold">{post.likeCount ?? 0}</span>
           </button>
 
           <button
@@ -159,30 +165,25 @@ function RecipeCardItem({
           <span className="text-xs font-semibold text-gray-700">
             {post.rating ?? 4.5}
           </span>
-          <span className="text-xs text-gray-400">
-            ({post.reviews ?? 0})
-          </span>
+          <span className="text-xs text-gray-400">({post.reviews ?? 0})</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 mb-3">
+        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
           <span className="flex items-center gap-1">
             <Clock size={12} className="text-gray-400" />
             {timeMinutes} min
           </span>
-
           <span className="flex items-center gap-1">
             <Users size={12} className="text-gray-400" />
             {servings}
           </span>
-
-          <span className="font-semibold text-gray-700">
-            {post.calories ?? 0} kcal
+          <span className="flex items-center gap-1">
+            <Heart size={12} className={post.isLiked ? "text-red-500 fill-red-500" : "text-gray-400"} />
+            <span className="font-medium">{post.likeCount ?? 0}</span>
           </span>
         </div>
 
-        <p className="text-xs text-gray-500 line-clamp-2 mb-3">
-          {previewText}
-        </p>
+        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{previewText}</p>
 
         {!!post.tags?.length && (
           <div className="flex gap-1 flex-wrap">
@@ -207,6 +208,7 @@ export default function LibraryRecipeGrid({
   posts,
   onOpen,
   onToggleSave,
+  onToggleLike,
 }: LibraryRecipeGridProps) {
   return (
     <div className="space-y-6">
@@ -223,7 +225,6 @@ export default function LibraryRecipeGrid({
           <div className="text-xs font-medium text-gray-500">
             Showing {posts.length} recipe{posts.length !== 1 ? "s" : ""}
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {posts.map((post) => (
               <RecipeCardItem
@@ -231,6 +232,7 @@ export default function LibraryRecipeGrid({
                 post={post}
                 onOpen={onOpen}
                 onToggleSave={onToggleSave}
+                onToggleLike={onToggleLike}
               />
             ))}
           </div>

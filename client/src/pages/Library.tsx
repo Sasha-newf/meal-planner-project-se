@@ -53,7 +53,7 @@ export default function Library() {
           ),
         ];
 
-setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
+        setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
       } catch (err) {
         console.error("Failed to load recipes", err);
       } finally {
@@ -71,9 +71,7 @@ setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
 
       if (isCurrentlySaved) {
         await api.delete(`/posts/${postId}/save`);
-        setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, isSaved: false } : p))
-        );
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
       } else {
         await api.post(`/posts/${postId}/save`);
         setPosts((prev) =>
@@ -83,6 +81,29 @@ setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
     } catch (err) {
       console.error("Error toggling save", err);
       alert("Error updating saved status");
+    }
+  }
+
+  async function onToggleLike(postId: string) {
+    try {
+      const target = posts.find((p) => p.id === postId);
+      const isLiked = Boolean(target?.isLiked);
+
+      if (isLiked) {
+        await api.delete(`/posts/${postId}/like`);
+      } else {
+        await api.post(`/posts/${postId}/like`);
+      }
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, isLiked: !isLiked, likeCount: (p.likeCount ?? 0) + (isLiked ? -1 : 1) }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling like", err);
     }
   }
 
@@ -164,7 +185,7 @@ setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
     } else if (sortBy === "title") {
       result.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === "popular") {
-      result.sort((a, b) => (b.tags?.length ?? 0) - (a.tags?.length ?? 0));
+      result.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0));
     }
 
     return result;
@@ -277,6 +298,7 @@ setPosts(combined.filter((post: LibraryPost) => Boolean(post.recipe)));
               posts={filteredPosts}
               onOpen={(postId) => navigate(`/posts/${postId}`)}
               onToggleSave={onToggleSave}
+              onToggleLike={onToggleLike}
             />
           )}
         </div>

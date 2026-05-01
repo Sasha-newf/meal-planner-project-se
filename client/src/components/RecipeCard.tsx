@@ -1,13 +1,13 @@
-import { Clock, Users, Bookmark } from "lucide-react";
+import { Clock, Users, Bookmark, Heart } from "lucide-react";
 
-export default function RecipeCard({ post, onOpen, onToggleSave }: any) {
+export default function RecipeCard({ post, onOpen, onToggleSave, onToggleLike }: any) {
   return (
     <div
       onClick={onOpen}
       className="bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden"
     >
       {post.imageUrl && (
-        <div className="h-48 overflow-hidden">
+        <div className="h-48 overflow-hidden relative">
           <img
             src={post.imageUrl}
             alt={post.title}
@@ -15,29 +15,51 @@ export default function RecipeCard({ post, onOpen, onToggleSave }: any) {
           />
         </div>
       )}
-
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold text-gray-900 leading-snug">
             {post.title}
           </h3>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Like button + count */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLike?.(post.id);
+              }}
+              className={`flex items-center gap-1 p-2 rounded-xl border transition-all ${
+                post.isLiked
+                  ? "bg-red-50 border-red-200 text-red-500"
+                  : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
+              }`}
+            >
+              <Heart
+                size={14}
+                fill={post.isLiked ? "currentColor" : "none"}
+              />
+              {post.likeCount > 0 && (
+                <span className="text-xs font-semibold">{post.likeCount}</span>
+              )}
+            </button>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSave(post.id);
-            }}
-            className={`shrink-0 p-2 rounded-xl border transition-all ${
-              post.isSaved
-                ? "bg-green-50 border-green-200 text-green-600"
-                : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
-            }`}
-          >
-            <Bookmark
-              size={15}
-              fill={post.isSaved ? "currentColor" : "none"}
-            />
-          </button>
+            {/* Save button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSave?.(post.id);
+              }}
+              className={`p-2 rounded-xl border transition-all ${
+                post.isSaved
+                  ? "bg-green-50 border-green-200 text-green-600"
+                  : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
+              }`}
+            >
+              <Bookmark
+                size={14}
+                fill={post.isSaved ? "currentColor" : "none"}
+              />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">

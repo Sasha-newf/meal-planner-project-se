@@ -53,6 +53,29 @@ export default function Saved() {
     }
   }
 
+  async function onToggleLike(postId: string) {
+    try {
+      const target = posts.find((p) => p.id === postId);
+      const isLiked = Boolean(target?.isLiked);
+
+      if (isLiked) {
+        await api.delete(`/posts/${postId}/like`);
+      } else {
+        await api.post(`/posts/${postId}/like`);
+      }
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, isLiked: !isLiked, likeCount: (p.likeCount ?? 0) + (isLiked ? -1 : 1) }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling like", err);
+    }
+  }
+
   const hasActiveFilters =
     filters.mealType.length > 0 ||
     filters.dietary.length > 0 ||
@@ -127,7 +150,7 @@ export default function Saved() {
     } else if (sortBy === "title") {
       result.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === "popular") {
-      result.sort((a, b) => (b.tags?.length ?? 0) - (a.tags?.length ?? 0));
+      result.sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0));
     }
 
     return result;
@@ -232,6 +255,7 @@ export default function Saved() {
               posts={filteredPosts}
               onOpen={(postId) => navigate(`/posts/${postId}`)}
               onToggleSave={onToggleSave}
+              onToggleLike={onToggleLike}
             />
           )}
         </div>
