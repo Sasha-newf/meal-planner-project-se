@@ -2,23 +2,33 @@ const prisma = require("../prismaClient");
 const bcrypt = require("bcrypt");
 
 async function getUserIdOrFallback(req) {
+  let userId = null;
   if (req && req.user && req.user.userId) {
-    return req.user.userId;
+    userId = req.user.userId;
   }
 
-  let firstUser = await prisma.user.findFirst();
+  let user = null;
+  if (userId) {
+    user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+  }
 
-  if (!firstUser) {
-    const hashedPassword = await bcrypt.hash("password123", 10);
-    firstUser = await prisma.user.create({
-      data: {
-        email: "test@example.com",
+  if (!user) {
+    // Ensure the fallback user exists
+    const hashedPassword = await bcrypt.hash("demo", 10);
+    user = await prisma.user.upsert({
+      where: { id: "demo-user" },
+      update: {},
+      create: {
+        id: "demo-user",
+        email: "demo@example.com",
         password: hashedPassword,
       },
     });
   }
 
-  return firstUser.id;
+  return user.id;
 }
 
 module.exports = {
