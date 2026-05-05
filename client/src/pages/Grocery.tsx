@@ -28,12 +28,20 @@ const CATEGORY_EMOJI: Record<string, string> = {
 export default function Grocery() {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem("grocery_checked");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+  const [manualItems, setManualItems] = useState<GroceryItem[]>(() => {
+    const saved = localStorage.getItem("grocery_manual");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeTab, setActiveTab] = useState<Tab>("byCategory");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [pantryInput, setPantryInput] = useState("");
+  const [manualInput, setManualInput] = useState("");
   const [showPantry, setShowPantry] = useState(false);
 
   async function loadGroceryList() {
@@ -72,15 +80,27 @@ export default function Grocery() {
     loadPantry();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("grocery_checked", JSON.stringify(Array.from(checkedItems)));
+  }, [checkedItems]);
+
+  useEffect(() => {
+    localStorage.setItem("grocery_manual", JSON.stringify(manualItems));
+  }, [manualItems]);
+
+  const allItems = useMemo(() => {
+    return [...items, ...manualItems];
+  }, [items, manualItems]);
+
   const grouped = useMemo(() => {
     const map: Record<string, GroceryItem[]> = {};
-    for (const item of items) {
+    for (const item of allItems) {
       const cat = item.category || "Other";
       if (!map[cat]) map[cat] = [];
       map[cat].push(item);
     }
     return map;
-  }, [items]);
+  }, [allItems]);
 
   function toggleChecked(key: string) {
     setCheckedItems((cur) => {
@@ -98,7 +118,7 @@ export default function Grocery() {
   async function handleShare() {
     setShareLoading(true);
     try {
-      const res = await api.post("/grocery/share", { items });
+      const res = await api.post("/grocery/share", { items: allItems });
       setShareUrl(res.data.url);
     } catch (err) {
       console.error(err);
@@ -133,6 +153,40 @@ export default function Grocery() {
     navigator.clipboard.writeText(formatAsText());
   }
 
+  function addManualItem() {
+    if (!manualInput.trim()) return;
+    const newItem: GroceryItem = {
+      name: manualInput.trim(),
+      quantity: 0,
+      unit: null,
+      category: "Other",
+      inPantry: false,
+    };
+    setManualItems((prev) => [...prev, newItem]);
+    setManualInput("");
+  }
+
+  function removeManualItem(name: string) {
+    setManualItems((prev) => prev.filter((i) => i.name !== name));
+    setCheckedItems((cur) => {
+      const next = new Set(cur);
+      next.delete(`${name}-null`);
+      return next;
+    });
+  }
+
+  function uncheckAll() {
+    setCheckedItems(new Set());
+  }
+
+  function clearCheckedManual() {
+    setManualItems((prev) => prev.filter((i) => !checkedItems.has(`${i.name}-${i.unit}`)));
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
   async function addToPantry() {
     if (!pantryInput.trim()) return;
     try {
@@ -153,8 +207,8 @@ export default function Grocery() {
     }
   }
 
-  const shoppingItems = items.filter((i) => !i.inPantry);
-  const pantryItems = items.filter((i) => i.inPantry);
+  const shoppingItems = allItems.filter((i) => !i.inPantry);
+  const pantryItems = allItems.filter((i) => i.inPantry);
 
   return (
     <div style={{ maxWidth: "860px", margin: "0 auto", padding: "24px" }}>
@@ -165,16 +219,17 @@ export default function Grocery() {
           {pantryItems.length > 0 && ` · ${pantryItems.length} already in pantry`}
         </p>
 
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div className="no-print" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <button onClick={handleCopy} style={btn("#f0fdf4","#16a34a","#bbf7d0")}>📋 Copy</button>
           <button onClick={handleWhatsApp} style={btn("#f0fdf4","#15803d","#bbf7d0")}>📱 WhatsApp</button>
           <button onClick={handleEmail} style={btn("#eff6ff","#1d4ed8","#bfdbfe")}>✉️ Email</button>
-          <button onClick={handleShare} disabled={shareLoading || items.length === 0} style={btn("#faf5ff","#7c3aed","#e9d5ff")}>
+          <button onClick={handleShare} disabled={shareLoading || allItems.length === 0} style={btn("#faf5ff","#7c3aed","#e9d5ff")}>
             {shareLoading ? "…" : "🔗 Share link"}
           </button>
           <button onClick={() => setShowPantry((s) => !s)} style={btn("#fff7ed","#c2410c","#fed7aa")}>
             🧺 Pantry ({pantry.length})
           </button>
+          <button onClick={handlePrint} style={btn("#f8fafc","#475569","#e2e8f0")}>🖨️ Print</button>
           <button onClick={loadGroceryList} style={btn("#f8fafc","#475569","#e2e8f0")}>↺ Refresh</button>
         </div>
 
@@ -188,7 +243,7 @@ export default function Grocery() {
       </div>
 
       {showPantry && (
-        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "16px", marginBottom: "20px" }}>
+        <div className="no-print" style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "16px", marginBottom: "20px" }}>
           <h3 style={{ margin: "0 0 8px" }}>🧺 My Pantry</h3>
           <p style={{ color: "#64748b", fontSize: "14px", margin: "0 0 12px" }}>Items you already have — they'll be greyed out in your list.</p>
           <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
@@ -213,27 +268,52 @@ export default function Grocery() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "6px", borderRadius: "16px", marginBottom: "20px", width: "fit-content" }}>
-        {(["byCategory", "combined"] as Tab[]).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
-            border: "none", borderRadius: "12px", padding: "8px 16px", cursor: "pointer", fontWeight: 700,
-            background: activeTab === tab ? "white" : "transparent",
-            color: activeTab === tab ? "#111827" : "#64748b",
-          }}>
-            {tab === "byCategory" ? "By category" : "All items"}
-          </button>
-        ))}
+      <div className="no-print" style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "16px", marginBottom: "20px" }}>
+        <h3 style={{ margin: "0 0 8px" }}>➕ Add Extra Items</h3>
+        <p style={{ color: "#64748b", fontSize: "14px", margin: "0 0 12px" }}>Need something else? Add it manually here.</p>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            value={manualInput}
+            onChange={(e) => setManualInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addManualItem()}
+            placeholder="e.g. Milk, Eggs, Bread..."
+            style={{ flex: 1, padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: "10px" }}
+          />
+          <button onClick={addManualItem} style={btn("#f0fdf4","#16a34a","#bbf7d0")}>Add Item</button>
+        </div>
+      </div>
+
+      <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "6px", borderRadius: "16px", width: "fit-content" }}>
+          {(["byCategory", "combined"] as Tab[]).map((tab) => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              border: "none", borderRadius: "12px", padding: "8px 16px", cursor: "pointer", fontWeight: 700,
+              background: activeTab === tab ? "white" : "transparent",
+              color: activeTab === tab ? "#111827" : "#64748b",
+            }}>
+              {tab === "byCategory" ? "By category" : "All items"}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {checkedItems.size > 0 && (
+            <button onClick={uncheckAll} style={btn("#fff", "#64748b", "#e2e8f0")}>Uncheck All</button>
+          )}
+          {manualItems.some(i => checkedItems.has(`${i.name}-${i.unit}`)) && (
+            <button onClick={clearCheckedManual} style={btn("#fff", "#ef4444", "#fecaca")}>Clear Checked Extra</button>
+          )}
+        </div>
       </div>
 
       {loading && <p style={{ color: "#64748b" }}>Loading grocery list…</p>}
 
-      {!loading && items.length === 0 && (
+      {!loading && allItems.length === 0 && (
         <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "24px", color: "#64748b" }}>
-          No meals planned this week. Add recipes to your meal calendar first.
+          No items in your grocery list. Add recipes to your calendar or add items manually above.
         </div>
       )}
 
-      {!loading && activeTab === "byCategory" && items.length > 0 && (
+      {!loading && activeTab === "byCategory" && allItems.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {Object.entries(grouped).map(([cat, catItems]) => {
             const toBuy = catItems.filter((i) => !i.inPantry);
@@ -255,12 +335,25 @@ export default function Grocery() {
                       textDecoration: checked ? "line-through" : "none",
                       color: checked ? "#94a3b8" : "#111827",
                       background: checked ? "#f8fafc" : "white",
+                      alignItems: "center"
                     }}>
-                      <span>
+                      <span style={{ display: "flex", alignItems: "center" }}>
                         <input type="checkbox" checked={checked} onChange={() => toggleChecked(key)} style={{ marginRight: "10px" }} />
                         {item.name}
                       </span>
-                      <span style={{ color: "#64748b" }}>{item.quantity > 0 ? item.quantity : "–"} {item.unit || ""}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <span style={{ color: "#64748b" }}>{item.quantity > 0 ? item.quantity : "–"} {item.unit || ""}</span>
+                        {manualItems.some(mi => mi.name === item.name) && (
+                          <button
+                            className="no-print"
+                            onClick={(e) => { e.preventDefault(); removeManualItem(item.name); }}
+                            style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px", fontSize: "18px" }}
+                            title="Remove manual item"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     </label>
                   );
                 })}
@@ -278,9 +371,9 @@ export default function Grocery() {
         </div>
       )}
 
-      {!loading && activeTab === "combined" && items.length > 0 && (
+      {!loading && activeTab === "combined" && allItems.length > 0 && (
         <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", overflow: "hidden" }}>
-          {items.map((item) => {
+          {allItems.map((item) => {
             const key = itemKey(item);
             const checked = checkedItems.has(key);
             return (
@@ -290,13 +383,26 @@ export default function Grocery() {
                 textDecoration: checked || item.inPantry ? "line-through" : "none",
                 color: checked || item.inPantry ? "#94a3b8" : "#111827",
                 background: item.inPantry ? "#f0fdf4" : checked ? "#f8fafc" : "white",
+                alignItems: "center"
               }}>
-                <span>
+                <span style={{ display: "flex", alignItems: "center" }}>
                   <input type="checkbox" checked={checked} onChange={() => toggleChecked(key)} style={{ marginRight: "10px" }} />
                   {CATEGORY_EMOJI[item.category] || ""} {item.name}
                   {item.inPantry && <span style={{ fontSize: "12px", color: "#16a34a", marginLeft: "8px" }}>✓ pantry</span>}
                 </span>
-                <span style={{ color: "#64748b" }}>{item.quantity > 0 ? item.quantity : "–"} {item.unit || ""}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ color: "#64748b" }}>{item.quantity > 0 ? item.quantity : "–"} {item.unit || ""}</span>
+                  {manualItems.some(mi => mi.name === item.name) && (
+                    <button
+                      className="no-print"
+                      onClick={(e) => { e.preventDefault(); removeManualItem(item.name); }}
+                      style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px", fontSize: "18px" }}
+                      title="Remove manual item"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </label>
             );
           })}

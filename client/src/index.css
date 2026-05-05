@@ -43,3 +43,17 @@ input,
 textarea {
   font: inherit;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    padding: 0 !important;
+  }
+  #root {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
