@@ -192,3 +192,59 @@ exports.getMyPosts = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch your posts" });
   }
 };
+
+exports.deletePost = async (req, res) => {
+  try {
+    const userId = await getUserIdOrFallback(req);
+    const postId = req.params.id;
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        recipe: true,
+      },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    if (post.creatorId !== userId) {
+      return res.status(403).json({
+        error: "You can delete only your own posts",
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.save.deleteMany({ where: { postId } });
+      await tx.like.deleteMany({ where: { postId } });
+
+      if (post.recipe) {
+        await tx.mealPlanItem.deleteMany({
+          where: { recipeId: post.recipe.id },
+        });
+
+        await tx.ingredient.deleteMany({
+          where: { recipeId: post.recipe.id },
+        });
+
+        await tx.step.deleteMany({
+          where: { recipeId: post.recipe.id },
+        });
+
+        await tx.recipe.delete({
+          where: { id: post.recipe.id },
+        });
+      }
+
+      await tx.post.delete({
+        where: { id: postId },
+      });
+    });
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Delete post error:", err);
+    res.status(500).json({ error: "Failed to delete post" });
+  }
+};

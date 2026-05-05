@@ -1,4 +1,4 @@
-import { Star, Clock, Users, Heart, Bookmark } from "lucide-react";
+import { Star, Clock, Users, Heart, Bookmark, Trash2 } from "lucide-react";
 
 type Ingredient = {
   name: string;
@@ -38,12 +38,13 @@ export type LibraryPost = {
   steps?: Step[];
 };
 
-interface LibraryRecipeGridProps {
+type LibraryRecipeGridProps = {
   posts: LibraryPost[];
   onOpen: (postId: string) => void;
-  onToggleSave: (postId: string) => void;
-  onToggleLike: (postId: string) => void;
-}
+  onToggleSave: (postId: string) => void | Promise<void>;
+  onToggleLike: (postId: string) => void | Promise<void>;
+  onDeletePost?: (postId: string) => void | Promise<void>;
+};
 
 const tagColorMap: Record<string, string> = {
   "High Protein": "bg-blue-50 text-blue-600",
@@ -81,11 +82,13 @@ function RecipeCardItem({
   onOpen,
   onToggleSave,
   onToggleLike,
+  onDeletePost,
 }: {
   post: LibraryPost;
   onOpen: (postId: string) => void;
-  onToggleSave: (postId: string) => void;
-  onToggleLike: (postId: string) => void;
+  onToggleSave: (postId: string) => void | Promise<void>;
+  onToggleLike: (postId: string) => void | Promise<void>;
+  onDeletePost?: (postId: string) => void | Promise<void>;
 }) {
   const timeMinutes = getTimeMinutes(post);
   const servings = getServings(post);
@@ -111,7 +114,6 @@ function RecipeCardItem({
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
-        {/* Like + Save in overlay */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           <button
             type="button"
@@ -120,7 +122,9 @@ function RecipeCardItem({
               onToggleLike(post.id);
             }}
             className={`flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm transition-all ${
-              post.isLiked ? "bg-red-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"
+              post.isLiked
+                ? "bg-red-500 text-white"
+                : "bg-white/80 text-gray-600 hover:bg-white"
             }`}
           >
             <Heart size={12} fill={post.isLiked ? "currentColor" : "none"} />
@@ -134,11 +138,27 @@ function RecipeCardItem({
               onToggleSave(post.id);
             }}
             className={`p-1.5 rounded-full backdrop-blur-sm transition-all ${
-              post.isSaved ? "bg-green-500 text-white" : "bg-white/80 text-gray-600 hover:bg-white"
+              post.isSaved
+                ? "bg-green-500 text-white"
+                : "bg-white/80 text-gray-600 hover:bg-white"
             }`}
           >
             <Bookmark size={13} fill={post.isSaved ? "currentColor" : "none"} />
           </button>
+
+          {onDeletePost && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeletePost(post.id);
+              }}
+              className="p-1.5 rounded-full backdrop-blur-sm bg-red-500 text-white hover:bg-red-600 transition-all"
+              title="Delete post"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
 
         {!!post.tags?.length && (
@@ -178,7 +198,12 @@ function RecipeCardItem({
             {servings}
           </span>
           <span className="flex items-center gap-1">
-            <Heart size={12} className={post.isLiked ? "text-red-500 fill-red-500" : "text-gray-400"} />
+            <Heart
+              size={12}
+              className={
+                post.isLiked ? "text-red-500 fill-red-500" : "text-gray-400"
+              }
+            />
             <span className="font-medium">{post.likeCount ?? 0}</span>
           </span>
         </div>
@@ -209,6 +234,7 @@ export default function LibraryRecipeGrid({
   onOpen,
   onToggleSave,
   onToggleLike,
+  onDeletePost,
 }: LibraryRecipeGridProps) {
   return (
     <div className="space-y-6">
@@ -217,8 +243,12 @@ export default function LibraryRecipeGrid({
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
             <Clock size={20} className="text-gray-400" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900">No recipes found</h3>
-          <p className="text-sm text-gray-400 mt-1">Try adjusting your search or filters</p>
+          <h3 className="text-base font-semibold text-gray-900">
+            No recipes found
+          </h3>
+          <p className="text-sm text-gray-400 mt-1">
+            Try adjusting your search or filters
+          </p>
         </div>
       ) : (
         <>
@@ -233,6 +263,7 @@ export default function LibraryRecipeGrid({
                 onOpen={onOpen}
                 onToggleSave={onToggleSave}
                 onToggleLike={onToggleLike}
+                onDeletePost={onDeletePost}
               />
             ))}
           </div>

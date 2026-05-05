@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
-import api from "../api/client";
-import RecipeFilter, { type FilterState } from "../components/RecipeFilter";
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
+  Download,
+} from "lucide-react";
+import api from "../../../api/client";
+import RecipeFilter, { type FilterState } from "../../../components/RecipeFilter";
+import ImportRecipeModal from "../../../components/ImportRecipeModal";
 import LibraryRecipeGrid, {
   type LibraryPost,
-} from "../components/LibraryRecipeGrid";
+} from "../../../components/LibraryRecipeGrid";
 
 type SortOption = "newest" | "popular" | "quickest" | "title";
 
-export default function Saved() {
+export default function Posted() {
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState<LibraryPost[]>([]);
@@ -18,38 +24,51 @@ export default function Saved() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const [filters, setFilters] = useState<FilterState>({
     mealType: [],
     dietary: [],
     cookTime: "",
     difficulty: "",
-    savedOnly: true,
+    savedOnly: false,
     importedOnly: false,
   });
 
   useEffect(() => {
-    async function loadSaved() {
+    async function loadPostedRecipes() {
       try {
-        const res = await api.get("/saved");
-        setPosts(res.data.map((p: LibraryPost) => ({ ...p, isSaved: true })));
+        const res = await api.get("/posts/mine");
+        setPosts(res.data.filter((post: LibraryPost) => Boolean(post.recipe)));
       } catch (err) {
-        console.error("Failed to load saved recipes", err);
+        console.error("Failed to load posted recipes", err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadSaved();
+    loadPostedRecipes();
   }, []);
 
   async function onToggleSave(postId: string) {
     try {
-      await api.delete(`/posts/${postId}/save`);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      const target = posts.find((p) => p.id === postId);
+      const isCurrentlySaved = Boolean(target?.isSaved);
+
+      if (isCurrentlySaved) {
+        await api.delete(`/posts/${postId}/save`);
+      } else {
+        await api.post(`/posts/${postId}/save`);
+      }
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, isSaved: !isCurrentlySaved } : p
+        )
+      );
     } catch (err) {
-      console.error("Error unsaving", err);
-      alert("Error removing saved recipe");
+      console.error("Error toggling save", err);
+      alert("Error updating saved status");
     }
   }
 
@@ -67,12 +86,28 @@ export default function Saved() {
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId
-            ? { ...p, isLiked: !isLiked, likeCount: (p.likeCount ?? 0) + (isLiked ? -1 : 1) }
+            ? {
+                ...p,
+                isLiked: !isLiked,
+                likeCount: (p.likeCount ?? 0) + (isLiked ? -1 : 1),
+              }
             : p
         )
       );
     } catch (err) {
       console.error("Error toggling like", err);
+    }
+  }
+
+  async function onDeletePost(postId: string) {
+    if (!confirm("Delete this post?")) return;
+
+    try {
+      await api.delete(`/posts/${postId}`);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err) {
+      console.error("Error deleting post", err);
+      alert("Error deleting post");
     }
   }
 
@@ -92,7 +127,9 @@ export default function Saved() {
 
       result = result.filter((post) => {
         const titleMatch = post.title.toLowerCase().includes(q);
-        const tagMatch = post.tags?.some((tag) => tag.toLowerCase().includes(q));
+        const tagMatch = post.tags?.some((tag) =>
+          tag.toLowerCase().includes(q)
+        );
         const ingredientMatch = post.recipe?.ingredients?.some((ingredient) =>
           ingredient.name.toLowerCase().includes(q)
         );
@@ -119,7 +156,9 @@ export default function Saved() {
 
     if (filters.difficulty) {
       result = result.filter((post) =>
-        post.tags?.some((tag) => tag.toLowerCase() === filters.difficulty.toLowerCase())
+        post.tags?.some(
+          (tag) => tag.toLowerCase() === filters.difficulty.toLowerCase()
+        )
       );
     }
 
@@ -139,13 +178,18 @@ export default function Saved() {
       });
     }
 
+    if (filters.savedOnly) {
+      result = result.filter((post) => post.isSaved);
+    }
+
     if (filters.importedOnly) {
       result = result.filter((post) => Boolean(post.videoUrl));
     }
 
     if (sortBy === "quickest") {
       result.sort(
-        (a, b) => (a.recipe?.timeMinutes ?? 9999) - (b.recipe?.timeMinutes ?? 9999)
+        (a, b) =>
+          (a.recipe?.timeMinutes ?? 9999) - (b.recipe?.timeMinutes ?? 9999)
       );
     } else if (sortBy === "title") {
       result.sort((a, b) => a.title.localeCompare(b.title));
@@ -160,9 +204,11 @@ export default function Saved() {
     <div className="flex flex-col min-w-0">
       <header className="bg-white border border-gray-100 rounded-3xl px-6 md:px-8 py-6 mb-6 shadow-sm">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Saved Recipes</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Posted Recipes
+          </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Your favorite recipes saved for later
+            Recipes you created and shared
           </p>
         </div>
 
@@ -174,7 +220,7 @@ export default function Saved() {
             />
             <input
               type="text"
-              placeholder="Search saved recipes..."
+              placeholder="Search posted recipes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-300 transition-all placeholder:text-gray-400"
@@ -192,7 +238,9 @@ export default function Saved() {
             >
               <SlidersHorizontal size={15} />
               Filters
-              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-green-500 ml-1" />}
+              {hasActiveFilters && (
+                <span className="w-2 h-2 rounded-full bg-green-500 ml-1" />
+              )}
             </button>
 
             <div className="relative group">
@@ -211,27 +259,37 @@ export default function Saved() {
               </button>
 
               <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-100 rounded-xl shadow-lg hidden group-hover:block z-20">
-                {(["newest", "popular", "quickest", "title"] as const).map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setSortBy(option)}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                      sortBy === option
-                        ? "bg-green-50 text-green-700 font-medium"
-                        : "text-gray-600 hover:bg-gray-50"
-                    } first:rounded-t-xl last:rounded-b-xl`}
-                  >
-                    {option === "newest"
-                      ? "Newest"
-                      : option === "popular"
-                      ? "Popular"
-                      : option === "quickest"
-                      ? "Quickest"
-                      : "Title A-Z"}
-                  </button>
-                ))}
+                {(["newest", "popular", "quickest", "title"] as const).map(
+                  (option) => (
+                    <button
+                      key={option}
+                      onClick={() => setSortBy(option)}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                        sortBy === option
+                          ? "bg-green-50 text-green-700 font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                      } first:rounded-t-xl last:rounded-b-xl`}
+                    >
+                      {option === "newest"
+                        ? "Newest"
+                        : option === "popular"
+                        ? "Popular"
+                        : option === "quickest"
+                        ? "Quickest"
+                        : "Title A-Z"}
+                    </button>
+                  )
+                )}
               </div>
             </div>
+
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-green-200"
+            >
+              <Download size={15} />
+              Import Recipe
+            </button>
           </div>
         </div>
       </header>
@@ -248,7 +306,7 @@ export default function Saved() {
         <div className="flex-1 min-w-0">
           {loading ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-500">
-              Loading saved recipes...
+              Loading posted recipes...
             </div>
           ) : (
             <LibraryRecipeGrid
@@ -256,10 +314,15 @@ export default function Saved() {
               onOpen={(postId) => navigate(`/posts/${postId}`)}
               onToggleSave={onToggleSave}
               onToggleLike={onToggleLike}
+              onDeletePost={onDeletePost}
             />
           )}
         </div>
       </div>
+
+      {showImportModal && (
+        <ImportRecipeModal onClose={() => setShowImportModal(false)} />
+      )}
     </div>
   );
 }
