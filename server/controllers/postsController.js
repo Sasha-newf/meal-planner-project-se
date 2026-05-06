@@ -1,5 +1,4 @@
 const prisma = require("../prismaClient");
-const { postSchema } = require("../validation/postSchema");
 const { toPostDto } = require("../dto/postDto");
 const { getUserIdOrFallback } = require("../services/userService");
 
@@ -45,6 +44,15 @@ function getImageFromUrl(url) {
   }
 }
 
+const creatorSelect = {
+  select: {
+    id: true,
+    email: true,
+    nickname: true,
+    avatarUrl: true,
+  },
+};
+
 exports.getFeed = async (req, res) => {
   try {
     const userId = await getUserIdOrFallback(req);
@@ -58,7 +66,7 @@ exports.getFeed = async (req, res) => {
             steps: { orderBy: { order: "asc" } },
           },
         },
-        creator: true,
+        creator: creatorSelect,
         saves: { where: { userId } },
         likes: true,
       },
@@ -85,7 +93,7 @@ exports.getPostById = async (req, res) => {
             steps: { orderBy: { order: "asc" } },
           },
         },
-        creator: true,
+        creator: creatorSelect,
         saves: { where: { userId } },
         likes: true,
       },
@@ -104,16 +112,6 @@ exports.getPostById = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    const result = postSchema.safeParse(req.body);
-
-    if (!result.success) {
-      return res.status(400).json({
-        error: result.error.issues
-          .map((e) => `${e.path.join(".")}: ${e.message}`)
-          .join(", "),
-      });
-    }
-
     const {
       title,
       videoUrl,
@@ -123,7 +121,11 @@ exports.createPost = async (req, res) => {
       ingredients,
       steps,
       tags,
-    } = result.data;
+    } = req.body;
+
+    if (!title || !videoUrl) {
+      return res.status(400).json({ error: "Title and videoUrl are required" });
+    }
 
     const creatorId = await getUserIdOrFallback(req);
     const finalImageUrl = imageUrl || getImageFromUrl(videoUrl);
@@ -138,11 +140,16 @@ exports.createPost = async (req, res) => {
         isPublic: true,
         recipe: {
           create: {
-            servings,
-            timeMinutes,
-            ingredients: { create: ingredients },
+            servings: servings || null,
+            timeMinutes: timeMinutes || null,
+            ingredients: {
+              create: ingredients || [],
+            },
             steps: {
-              create: steps.map((text, i) => ({ order: i + 1, text })),
+              create: (steps || []).map((text, i) => ({
+                order: i + 1,
+                text,
+              })),
             },
           },
         },
@@ -154,7 +161,7 @@ exports.createPost = async (req, res) => {
             steps: { orderBy: { order: "asc" } },
           },
         },
-        creator: true,
+        creator: creatorSelect,
         likes: true,
       },
     });
@@ -179,7 +186,7 @@ exports.getMyPosts = async (req, res) => {
             steps: { orderBy: { order: "asc" } },
           },
         },
-        creator: true,
+        creator: creatorSelect,
         saves: { where: { userId } },
         likes: true,
       },

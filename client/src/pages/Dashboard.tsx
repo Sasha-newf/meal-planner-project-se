@@ -46,6 +46,12 @@ type DiscoverPost = {
     handle?: string;
     avatar?: string;
   };
+  creator?: {
+    id?: string;
+    email?: string;
+    nickname?: string;
+    avatarUrl?: string;
+  };
   recipe?: {
     timeMinutes?: number;
     servings?: number;
@@ -594,12 +600,26 @@ function FeedCard({
 }) {
   const navigate = useNavigate();
 
-  const authorName = post.author?.name || post.user?.name || "Recipe creator";
-  const authorHandle = post.author?.username || post.user?.handle || "@discover";
+  const creatorName =
+    post.creator?.nickname ||
+    post.author?.name ||
+    post.user?.name ||
+    "Recipe creator";
+
+  const creatorHandle =
+    post.creator?.nickname
+      ? `@${post.creator.nickname}`
+      : post.creator?.email
+      ? `@${post.creator.email.split("@")[0]}`
+      : post.author?.username ||
+        post.user?.handle ||
+        "@discover";
+
   const avatar =
+    post.creator?.avatarUrl ||
     post.author?.avatarUrl ||
     post.user?.avatar ||
-    "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=60";
+    "https://ui-avatars.com/api/?name=Recipe+Creator&background=dcfce7&color=16a34a";
   const image = getPostImage(post);
   const title = getPostTitle(post);
   const likes = getPostLikes(post);
@@ -609,10 +629,10 @@ function FeedCard({
     <div className="plan-feed-card">
       <div className="plan-feed-card__top">
         <div className="plan-feed-card__user">
-          <img src={avatar} alt={authorName} className="plan-feed-card__avatar" />
+          <img src={avatar} alt={creatorName} className="plan-feed-card__avatar" />
           <div>
-            <p className="plan-feed-card__name">{authorName}</p>
-            <p className="plan-feed-card__handle">{authorHandle}</p>
+            <p className="plan-feed-card__name">{creatorName}</p>
+            <p className="plan-feed-card__handle">{creatorHandle}</p>
           </div>
         </div>
 

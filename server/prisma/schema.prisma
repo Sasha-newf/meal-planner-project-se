@@ -7,16 +7,23 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  planItems     MealPlanItem[]
-  posts         Post[]
-  saves         Save[]
-  likes         Like[]
-  pantryItems   PantryItem[]
-  groceryShares GroceryShare[]
+  id                   String         @id @default(cuid())
+  email                String         @unique
+  password             String
+  createdAt            DateTime       @default(now())
+
+  nickname             String?
+  avatarUrl            String?
+  preferredUnits       String         @default("metric")
+  preferredIngredients String[]       @default([])
+  avoidedIngredients   String[]       @default([])
+
+  planItems            MealPlanItem[]
+  posts                Post[]
+  saves                Save[]
+  likes                Like[]
+  pantryItems          PantryItem[]
+  groceryShares        GroceryShare[]
 }
 
 model Post {

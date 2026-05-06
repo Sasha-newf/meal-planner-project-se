@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const settingsRoutes = require("./routes/settings");
 const morgan = require("morgan");
 require("dotenv").config();
 
@@ -28,6 +29,7 @@ app.use("/imports", importsRoutes);
 app.use("/plan", planRoutes);
 app.use("/grocery", groceryRoutes);
 app.use("/pantry", pantryRoutes);
+app.use("/settings", settingsRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

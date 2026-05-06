@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Post from "./pages/Post";
 import ImportRecipe from "./pages/ImportRecipe";
 import SharedGrocery from "./pages/SharedGrocery";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/grocery" element={<Grocery />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/posts/:id" element={<Post />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
     </Routes>

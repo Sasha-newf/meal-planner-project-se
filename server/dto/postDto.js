@@ -15,7 +15,12 @@ function toPostDto(post, userId) {
       : false,
     likeCount: post.likes ? post.likes.length : 0,
     creator: post.creator
-      ? { id: post.creator.id, email: post.creator.email }
+      ? {
+          id: post.creator.id,
+          email: post.creator.email,
+          nickname: post.creator.nickname,
+          avatarUrl: post.creator.avatarUrl,
+        }
       : null,
     recipe: post.recipe
       ? {
