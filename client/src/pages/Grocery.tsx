@@ -5,6 +5,7 @@ type GroceryItem = {
   name: string;
   quantity: number;
   unit: string | null;
+  displayQuantity?: string;
   convertedQuantity?: number;
   convertedUnit?: string | null;
   category: string;
@@ -13,13 +14,13 @@ type GroceryItem = {
 
 type RecipeGroup = {
   planItemId: string;
+  planItemIds?: string[];
   recipeId: string | number;
   recipeTitle: string;
   recipeImageUrl?: string | null;
   imageUrl?: string | null;
   items: GroceryItem[];
 };
-
 
 type Tab = "byCategory" | "byRecipe";
 
@@ -65,7 +66,6 @@ function safeParse<T>(value: string | null, fallback: T): T {
   }
 }
 
-
 function itemKey(item: GroceryItem, prefix = "") {
   return `${prefix}${item.name}-${item.unit || "null"}`;
 }
@@ -76,6 +76,8 @@ function formatNumber(value: number) {
 }
 
 function formatQuantity(item: GroceryItem) {
+  if (item.displayQuantity) return item.displayQuantity;
+
   const quantity = item.convertedQuantity ?? item.quantity;
   const unit = item.convertedUnit || item.unit;
 
@@ -132,29 +134,20 @@ export default function Grocery() {
         return;
       }
 
-      let url = "";
-
-      if (planItemIds) {
-        url = `/grocery?planItemIds=${encodeURIComponent(planItemIds)}`;
-      } else {
-        url = `/grocery?from=${encodeURIComponent(fromParam || "")}&to=${encodeURIComponent(
-          toParam || ""
-        )}`;
-      }
+      const url = planItemIds
+        ? `/grocery?planItemIds=${encodeURIComponent(planItemIds)}`
+        : `/grocery?from=${encodeURIComponent(fromParam || "")}&to=${encodeURIComponent(
+            toParam || ""
+          )}`;
 
       const res = await api.get(url);
 
       if (Array.isArray(res.data)) {
         setItems(res.data);
         setByRecipe([]);
-
       } else {
-        const nextItems = res.data.byCategory || [];
-        const nextByRecipe = res.data.byRecipe || [];
-
-        setItems(nextItems);
-        setByRecipe(nextByRecipe);
-        
+        setItems(res.data.byCategory || []);
+        setByRecipe(res.data.byRecipe || []);
       }
     } catch (err) {
       console.error(err);
@@ -175,7 +168,6 @@ export default function Grocery() {
   useEffect(() => {
     localStorage.setItem(MANUAL_KEY, JSON.stringify(manualItems));
   }, [manualItems]);
-
 
   const allItems = useMemo(() => {
     return [...items, ...manualItems];
@@ -212,6 +204,7 @@ export default function Grocery() {
 
     return {
       planItemId: "extra-items",
+      planItemIds: ["extra-items"],
       recipeId: "extra-items",
       recipeTitle: "Extra Items",
       recipeImageUrl: null,
@@ -291,31 +284,6 @@ export default function Grocery() {
     });
   }
 
-  function combineRecipeGroups(groups: RecipeGroup[]) {
-    const map: Record<string, GroceryItem> = {};
-
-    for (const group of groups) {
-      for (const item of group.items) {
-        const key = `${item.name.trim().toLowerCase()}-${item.unit || "null"}`;
-
-        if (!map[key]) {
-          map[key] = {
-            name: item.name,
-            quantity: item.convertedQuantity ?? item.quantity ?? 0,
-            unit: item.unit,
-            category: item.category || "Other",
-            inPantry: item.inPantry || false,
-          };
-        } else {
-          const quantityToAdd = item.quantity ?? 0;
-          map[key].quantity = Number((map[key].quantity + quantityToAdd).toFixed(2));
-        }
-      }
-    }
-
-    return Object.values(map);
-  }
-
   function removeRecipeGroup(planItemId: string) {
     if (planItemId === "extra-items") {
       setManualItems([]);
@@ -336,19 +304,23 @@ export default function Grocery() {
       const removedGroup = prev.find((group) => group.planItemId === planItemId);
       const remainingGroups = prev.filter((group) => group.planItemId !== planItemId);
 
-      if (remainingGroups.length === 0) {
+      const remainingPlanItemIds = remainingGroups.flatMap((group) =>
+        group.planItemIds?.length ? group.planItemIds : [group.planItemId]
+      );
+
+      if (remainingPlanItemIds.length === 0) {
         setItems([]);
         localStorage.removeItem("grocery_last_url");
         window.history.pushState(null, "", "/grocery");
       } else {
-        setItems(combineRecipeGroups(remainingGroups));
-
         const groceryUrl = `/grocery?planItemIds=${encodeURIComponent(
-          remainingGroups.map((group) => group.planItemId).join(",")
+          remainingPlanItemIds.join(",")
         )}`;
 
         localStorage.setItem("grocery_last_url", groceryUrl);
         window.history.pushState(null, "", groceryUrl);
+
+        loadGroceryList();
       }
 
       if (removedGroup) {
