@@ -22,24 +22,56 @@ const CATEGORY_ORDER = [
 ];
 
 const CATEGORY_KEYWORDS = {
-  Produce: ["tomato","onion","garlic","potato","carrot","pepper","lettuce","spinach","apple","banana","lemon","lime","broccoli","cucumber","zucchini","mushroom","avocado"],
-  "Meat & Seafood": ["chicken","beef","pork","salmon","tuna","shrimp","fish","meat"],
-  "Dairy & Eggs": ["milk","cheese","butter","yogurt","cream","egg"],
-  Bakery: ["bread","bun","bagel","tortilla","pita","naan"],
-  "Grains & Pasta": ["rice","pasta","noodle","quinoa","oats"],
-  "Canned & Jarred": ["canned","beans","lentils","tomato paste"],
-  "Condiments & Sauces": ["sauce","ketchup","mustard","mayo","pesto"],
-  "Spices & Herbs": ["salt","pepper","cumin","paprika","oregano"],
-  Baking: ["flour","sugar","baking powder","vanilla"],
-  "Oils & Vinegars": ["oil","olive oil","vinegar"],
+  Produce: [
+    "tomato",
+    "onion",
+    "garlic",
+    "potato",
+    "carrot",
+    "pepper",
+    "lettuce",
+    "spinach",
+    "apple",
+    "banana",
+    "lemon",
+    "lime",
+    "broccoli",
+    "cucumber",
+    "zucchini",
+    "mushroom",
+    "avocado",
+  ],
+  "Meat & Seafood": ["chicken", "beef", "pork", "salmon", "tuna", "shrimp", "fish", "meat"],
+  "Dairy & Eggs": ["milk", "cheese", "butter", "yogurt", "cream", "egg"],
+  Bakery: ["bread", "bun", "bagel", "tortilla", "pita", "naan"],
+  "Grains & Pasta": ["rice", "pasta", "noodle", "quinoa", "oats"],
+  "Canned & Jarred": ["canned", "beans", "lentils", "tomato paste"],
+  "Condiments & Sauces": ["sauce", "ketchup", "mustard", "mayo", "pesto"],
+  "Spices & Herbs": ["salt", "pepper", "cumin", "paprika", "oregano"],
+  Baking: ["flour", "sugar", "baking powder", "vanilla"],
+  "Oils & Vinegars": ["oil", "olive oil", "vinegar"],
   Frozen: ["frozen"],
-  Snacks: ["chips","nuts","cookies"],
-  Beverages: ["water","juice","coffee","tea"],
+  Snacks: ["chips", "nuts", "cookies"],
+  Beverages: ["water", "juice", "coffee", "tea"],
   Other: [],
 };
 
 function normalizeIngredientName(name) {
-  return String(name || "").toLowerCase().replace(/\s+/g, " ").trim();
+  return String(name || "")
+    .toLowerCase()
+    .replace(/,.*$/, "")
+    .replace(/\bbreasts\b/g, "breast")
+    .replace(/\bpieces\b/g, "piece")
+    .replace(/\bpcs\b/g, "piece")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function displayIngredientName(name) {
+  return normalizeIngredientName(name)
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function categorizeIngredient(name) {
@@ -65,7 +97,8 @@ function sortItems(items) {
 }
 
 function round(val) {
-  return Math.round(Number(val || 0));
+  const num = Number(val || 0);
+  return Math.round(num * 10) / 10;
 }
 
 exports.getGroceryList = async (req, res) => {
@@ -115,12 +148,13 @@ exports.getGroceryList = async (req, res) => {
         const { quantity: baseQty, unit: baseUnit } = toBase(ing.quantity, ing.unit);
 
         const name = ing.name.trim();
-        const category = categorizeIngredient(name);
-        const key = `${name.toLowerCase()}-${baseUnit || ""}`;
+        const normalizedName = normalizeIngredientName(name);
+        const category = categorizeIngredient(normalizedName);
+        const key = `${normalizedName}-${baseUnit || ""}`;
 
         if (!combinedMap[key]) {
           combinedMap[key] = {
-            name,
+            name: displayIngredientName(name),
             quantity: baseQty || 0,
             unit: baseUnit,
             category,
@@ -133,9 +167,9 @@ exports.getGroceryList = async (req, res) => {
 
         recipeItems.push({
           name,
-          quantity: ing.quantity || 0, // исходное
+          quantity: ing.quantity || 0,
           unit: ing.unit || null,
-          convertedQuantity: round(display.quantity), // округленное
+          convertedQuantity: round(display.quantity),
           convertedUnit: display.unit || null,
           category,
           inPantry: isCoveredByPantry(name, pantry),
