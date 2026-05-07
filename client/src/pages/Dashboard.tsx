@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   Plus,
   Share2,
+  ShoppingCart,
   Wheat,
 } from "lucide-react";
 
@@ -414,6 +415,7 @@ function SlotRecipesModal({
   onDelete,
   selectedGroceryItemIds,
   onToggleGroceryItem,
+  onGenerateGroceryList,
 }: {
   items: MealPlanItem[];
   title: string;
@@ -421,6 +423,7 @@ function SlotRecipesModal({
   onDelete: (itemId: string) => void;
   selectedGroceryItemIds: string[];
   onToggleGroceryItem: (itemId: string) => void;
+  onGenerateGroceryList: (ids?: string[]) => void;
 }) {
   const navigate = useNavigate();
 
@@ -572,6 +575,28 @@ function SlotRecipesModal({
                 </button>
 
                 <button
+                  onClick={() => onGenerateGroceryList([item.id])}
+                  style={{
+                    border: "1px solid #bbf7d0",
+                    background: "#f0fdf4",
+                    color: "#16a34a",
+                    borderRadius: "14px",
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={`Add ${item.recipe.post.title} to grocery list`}
+                >
+                  <ShoppingCart size={14} />
+                  Add to list
+                </button>
+
+                <button
                   onClick={() => onDelete(item.id)}
                   style={{
                     border: "1px solid #fecaca",
@@ -589,6 +614,41 @@ function SlotRecipesModal({
             );
           })}
         </div>
+
+        {selectedGroceryItemIds.length > 0 && (
+          <div
+            style={{
+              marginTop: "20px",
+              borderTop: "1px solid #e5e7eb",
+              paddingTop: "20px",
+            }}
+          >
+            <button
+              onClick={() => onGenerateGroceryList()}
+              style={{
+                width: "100%",
+                padding: "14px",
+                background: "#22c55e",
+                color: "white",
+                borderRadius: "16px",
+                border: "none",
+                fontWeight: 700,
+                fontSize: "15px",
+                cursor: "pointer",
+                boxShadow: "0 8px 18px rgba(34, 197, 94, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+              }}
+            >
+              <ShoppingCart size={18} />
+              Add {selectedGroceryItemIds.length}{" "}
+              {selectedGroceryItemIds.length === 1 ? "recipe" : "recipes"} to
+              grocery list
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -877,8 +937,10 @@ export default function Dashboard() {
     localStorage.removeItem(`grocery_manual:${suffix}`);
   }
 
-  function handleGenerateGroceryList() {
-    if (selectedGroceryItemIds.length === 0) {
+  function handleGenerateGroceryList(overrideIds?: string[]) {
+    const ids = Array.isArray(overrideIds) ? overrideIds : selectedGroceryItemIds;
+
+    if (ids.length === 0) {
       alert("Please select at least one recipe from the calendar first");
       return;
     }
@@ -886,7 +948,7 @@ export default function Dashboard() {
     clearGroceryCache();
 
     const groceryUrl = `/grocery?planItemIds=${encodeURIComponent(
-      selectedGroceryItemIds.join(",")
+      ids.join(",")
     )}`;
 
     localStorage.setItem("grocery_last_url", groceryUrl);
@@ -1008,7 +1070,7 @@ export default function Dashboard() {
 
                 <button
                   className="plan-primary-outline-btn"
-                  onClick={handleGenerateGroceryList}
+                  onClick={() => handleGenerateGroceryList()}
                 >
                   Add selected to grocery list
                 </button>
@@ -1047,6 +1109,7 @@ export default function Dashboard() {
           onDelete={handleDeletePlanItem}
           selectedGroceryItemIds={selectedGroceryItemIds}
           onToggleGroceryItem={toggleGroceryItem}
+          onGenerateGroceryList={handleGenerateGroceryList}
         />
       )}
     </div>
