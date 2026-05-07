@@ -71,7 +71,9 @@ type MealPlanItem = {
   id: string;
   date: string;
   mealType: MealType;
+  plannedServings?: number | null;
   recipe: {
+    servings?: number | null;
     post: {
       id: string;
       title: string;
@@ -162,6 +164,14 @@ function getPostLikes(post: DiscoverPost) {
 
 function getPostComments(post: DiscoverPost) {
   return post.commentCount ?? post.comments ?? 0;
+}
+
+function getPlannedServings(item: MealPlanItem) {
+  return Number(item.plannedServings || item.recipe.servings || 1);
+}
+
+function formatServingsLabel(servings: number) {
+  return `${servings} ${servings === 1 ? "serving" : "servings"}`;
 }
 
 function Header({ weekLabel }: { weekLabel: string }) {
@@ -264,6 +274,8 @@ function MealCell({
   }
 
   const firstItem = items[0];
+  const plannedServings = getPlannedServings(firstItem);
+
   const title =
     items.length === 1
       ? firstItem.recipe.post.title
@@ -281,6 +293,19 @@ function MealCell({
 
       <div className="plan-meal-card__content">
         <p className="plan-meal-card__title">{title}</p>
+
+        {items.length === 1 ? (
+          <p
+            style={{
+              margin: "2px 0 0",
+              color: "#16a34a",
+              fontSize: "12px",
+              fontWeight: 700,
+            }}
+          >
+            {formatServingsLabel(plannedServings)}
+          </p>
+        ) : null}
 
         <p className="plan-meal-card__time">
           <Clock size={9} /> {fallbackMeal.time}
@@ -450,104 +475,119 @@ function SlotRecipesModal({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {items.map((item) => (
-            <div
-              key={item.id}
-              style={{ display: "flex", gap: "10px", alignItems: "stretch" }}
-            >
-              <label
-                style={{
-                  width: "46px",
-                  border: "1px solid #bbf7d0",
-                  background: selectedGroceryItemIds.includes(item.id)
-                    ? "#dcfce7"
-                    : "#f0fdf4",
-                  borderRadius: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
+          {items.map((item) => {
+            const plannedServings = getPlannedServings(item);
+
+            return (
+              <div
+                key={item.id}
+                style={{ display: "flex", gap: "10px", alignItems: "stretch" }}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedGroceryItemIds.includes(item.id)}
-                  onChange={() => onToggleGroceryItem(item.id)}
-                />
-              </label>
-
-              <button
-                onClick={() => navigate(`/posts/${item.recipe.post.id}`)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  flex: 1,
-                  padding: "12px",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "18px",
-                  background: "white",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                {item.recipe.post.imageUrl ? (
-                  <img
-                    src={item.recipe.post.imageUrl}
-                    alt={item.recipe.post.title}
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      objectFit: "cover",
-                      borderRadius: "14px",
-                    }}
+                <label
+                  style={{
+                    width: "46px",
+                    border: "1px solid #bbf7d0",
+                    background: selectedGroceryItemIds.includes(item.id)
+                      ? "#dcfce7"
+                      : "#f0fdf4",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedGroceryItemIds.includes(item.id)}
+                    onChange={() => onToggleGroceryItem(item.id)}
                   />
-                ) : (
-                  <div
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "14px",
-                      background: "#f1f5f9",
-                    }}
-                  />
-                )}
+                </label>
 
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, color: "#111827" }}>
-                    {item.recipe.post.title}
-                  </p>
+                <button
+                  onClick={() => navigate(`/posts/${item.recipe.post.id}`)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flex: 1,
+                    padding: "12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "18px",
+                    background: "white",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  {item.recipe.post.imageUrl ? (
+                    <img
+                      src={item.recipe.post.imageUrl}
+                      alt={item.recipe.post.title}
+                      style={{
+                        width: "56px",
+                        height: "56px",
+                        objectFit: "cover",
+                        borderRadius: "14px",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "56px",
+                        height: "56px",
+                        borderRadius: "14px",
+                        background: "#f1f5f9",
+                      }}
+                    />
+                  )}
 
-                  {item.recipe.post.tags?.length ? (
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, color: "#111827" }}>
+                      {item.recipe.post.title}
+                    </p>
+
                     <p
                       style={{
                         margin: "4px 0 0",
-                        color: "#94a3b8",
+                        color: "#16a34a",
                         fontSize: "13px",
+                        fontWeight: 700,
                       }}
                     >
-                      {item.recipe.post.tags.join(", ")}
+                      {formatServingsLabel(plannedServings)}
                     </p>
-                  ) : null}
-                </div>
-              </button>
 
-              <button
-                onClick={() => onDelete(item.id)}
-                style={{
-                  border: "1px solid #fecaca",
-                  background: "#fef2f2",
-                  color: "#dc2626",
-                  borderRadius: "14px",
-                  padding: "12px 14px",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
+                    {item.recipe.post.tags?.length ? (
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          color: "#94a3b8",
+                          fontSize: "13px",
+                        }}
+                      >
+                        {item.recipe.post.tags.join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => onDelete(item.id)}
+                  style={{
+                    border: "1px solid #fecaca",
+                    background: "#fef2f2",
+                    color: "#dc2626",
+                    borderRadius: "14px",
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -607,20 +647,18 @@ function FeedCard({
     post.user?.name ||
     "Recipe creator";
 
-  const creatorHandle =
-    post.creator?.nickname
-      ? `@${post.creator.nickname}`
-      : post.creator?.email
-      ? `@${post.creator.email.split("@")[0]}`
-      : post.author?.username ||
-        post.user?.handle ||
-        "@discover";
+  const creatorHandle = post.creator?.nickname
+    ? `@${post.creator.nickname}`
+    : post.creator?.email
+    ? `@${post.creator.email.split("@")[0]}`
+    : post.author?.username || post.user?.handle || "@discover";
 
   const avatar =
     post.creator?.avatarUrl ||
     post.author?.avatarUrl ||
     post.user?.avatar ||
     "https://ui-avatars.com/api/?name=Recipe+Creator&background=dcfce7&color=16a34a";
+
   const image = getPostImage(post);
   const title = getPostTitle(post);
   const likes = getPostLikes(post);

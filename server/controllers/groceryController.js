@@ -101,6 +101,15 @@ function round(val) {
   return Math.round(num * 10) / 10;
 }
 
+function getScaleFactor(planItem) {
+  const baseServings = Number(planItem.recipe?.servings || 1);
+  const plannedServings = Number(planItem.plannedServings || baseServings);
+
+  if (!baseServings || baseServings <= 0) return 1;
+
+  return Math.max(0.1, plannedServings / baseServings);
+}
+
 exports.getGroceryList = async (req, res) => {
   try {
     const userId = await getUserIdOrFallback(req);
@@ -142,10 +151,15 @@ exports.getGroceryList = async (req, res) => {
     for (const item of planItems) {
       if (!item.recipe?.ingredients) continue;
 
+      const scaleFactor = getScaleFactor(item);
       const recipeItems = [];
 
       for (const ing of item.recipe.ingredients) {
-        const { quantity: baseQty, unit: baseUnit } = toBase(ing.quantity, ing.unit);
+        const scaledQuantity = Number(ing.quantity || 0) * scaleFactor;
+        const { quantity: baseQty, unit: baseUnit } = toBase(
+          scaledQuantity,
+          ing.unit
+        );
 
         const name = ing.name.trim();
         const normalizedName = normalizeIngredientName(name);
@@ -167,7 +181,7 @@ exports.getGroceryList = async (req, res) => {
 
         recipeItems.push({
           name,
-          quantity: ing.quantity || 0,
+          quantity: round(scaledQuantity),
           unit: ing.unit || null,
           convertedQuantity: round(display.quantity),
           convertedUnit: display.unit || null,
@@ -181,6 +195,8 @@ exports.getGroceryList = async (req, res) => {
         recipeId: item.recipe.id,
         recipeTitle: item.recipe.post?.title || "Recipe",
         recipeImageUrl: item.recipe.post?.imageUrl || null,
+        servingsMultiplier: scaleFactor,
+        plannedServings: Number(item.plannedServings || item.recipe.servings || 1),
         items: sortItems(recipeItems),
       });
     }

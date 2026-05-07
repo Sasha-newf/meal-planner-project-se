@@ -4,7 +4,7 @@ const { getUserIdOrFallback } = require("../services/userService");
 exports.addToPlan = async (req, res) => {
   try {
     const userId = await getUserIdOrFallback(req);
-    const { recipeId, date, mealType } = req.body;
+    const { recipeId, date, mealType, servingMultiplier = 1 } = req.body;
 
     if (!recipeId || !date) {
       return res.status(400).json({
@@ -36,12 +36,21 @@ exports.addToPlan = async (req, res) => {
       });
     }
 
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { servings: true },
+    });
+
+    const baseServings = recipe?.servings || 1;
+    const multiplier = Math.max(0.1, Number(servingMultiplier) || 1);
+
     const item = await prisma.mealPlanItem.create({
       data: {
         userId,
         recipeId,
         date: mealDate,
         mealType: mealType || "Lunch",
+        plannedServings: baseServings * multiplier,
       },
     });
 
@@ -105,7 +114,6 @@ exports.deleteFromPlan = async (req, res) => {
       });
     }
 
-    // Optional safety: ensure user owns it
     if (existing.userId !== userId) {
       return res.status(403).json({
         error: "Not authorized",

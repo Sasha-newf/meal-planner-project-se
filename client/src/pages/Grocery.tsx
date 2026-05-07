@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import api from "../api/client";
-import { useAuth } from "../context/AuthContext";
 
 type GroceryItem = {
   name: string;
@@ -45,63 +44,60 @@ const CATEGORY_EMOJI: Record<string, string> = {
   Spices: "🌿",
 };
 
+function getStorageSuffix() {
+  return localStorage.getItem("token") || "anon";
+}
+
+function storageKey(key: string) {
+  return `${key}:${getStorageSuffix()}`;
+}
+
+const CHECKED_KEY = storageKey("grocery_checked");
+const MANUAL_KEY = storageKey("grocery_manual");
+
+function safeParse<T>(value: string | null, fallback: T): T {
+  if (!value) return fallback;
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+
+function itemKey(item: GroceryItem, prefix = "") {
+  return `${prefix}${item.name}-${item.unit || "null"}`;
+}
+
+function formatNumber(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+}
+
+function formatQuantity(item: GroceryItem) {
+  const quantity = item.convertedQuantity ?? item.quantity;
+  const unit = item.convertedUnit || item.unit;
+
+  if (!quantity || quantity <= 0) return "–";
+
+  return `${formatNumber(quantity)} ${unit || ""}`.trim();
+}
+
+function btn(bg: string, color: string, border: string): CSSProperties {
+  return {
+    border: `1px solid ${border}`,
+    background: bg,
+    color,
+    borderRadius: "12px",
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: "14px",
+  };
+}
+
 export default function Grocery() {
-  const { user } = useAuth();
-  const suffix = user?.id || "anon";
-  const CHECKED_KEY = `grocery_checked:${suffix}`;
-  const MANUAL_KEY = `grocery_manual:${suffix}`;
-
-  function safeParse<T>(value: string | null, fallback: T): T {
-    if (!value) return fallback;
-
-    try {
-      return JSON.parse(value) as T;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function itemKey(item: GroceryItem, prefix = "") {
-    return `${prefix}${item.name}-${item.unit || "null"}`;
-  }
-
-  function formatNumber(value: number) {
-    if (!Number.isFinite(value)) return "0";
-    return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
-  }
-
-  function formatQuantity(item: GroceryItem) {
-    const original =
-      item.quantity > 0
-        ? `${formatNumber(item.quantity)} ${item.unit || ""}`.trim()
-        : "–";
-
-    if (
-      item.convertedQuantity != null &&
-      item.convertedQuantity > 0 &&
-      item.convertedUnit &&
-      item.unit &&
-      item.convertedUnit !== item.unit
-    ) {
-      return `${original} (${Math.round(item.convertedQuantity)} ${item.convertedUnit})`;
-    }
-
-    return original;
-  }
-
-  function btn(bg: string, color: string, border: string): CSSProperties {
-    return {
-      border: `1px solid ${border}`,
-      background: bg,
-      color,
-      borderRadius: "12px",
-      padding: "8px 14px",
-      cursor: "pointer",
-      fontWeight: 600,
-      fontSize: "14px",
-    };
-  }
-
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [byRecipe, setByRecipe] = useState<RecipeGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -306,12 +302,12 @@ export default function Grocery() {
           map[key] = {
             name: item.name,
             quantity: item.convertedQuantity ?? item.quantity ?? 0,
-            unit: item.convertedUnit || item.unit,
+            unit: item.unit,
             category: item.category || "Other",
             inPantry: item.inPantry || false,
           };
         } else {
-          const quantityToAdd = item.convertedQuantity ?? item.quantity ?? 0;
+          const quantityToAdd = item.quantity ?? 0;
           map[key].quantity = Number((map[key].quantity + quantityToAdd).toFixed(2));
         }
       }
